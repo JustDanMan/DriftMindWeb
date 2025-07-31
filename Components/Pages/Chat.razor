@@ -1,0 +1,525 @@
+@page "/chat"
+@using DriftMindWeb.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject IDriftMindApiService ApiService
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@rendermode InteractiveServer
+
+<PageTitle>DriftMind Chat</PageTitle>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h2>
+            <i class="bi bi-chat-dots"></i>
+            DriftMind AI Assistant
+        </h2>
+        <p class="text-muted">Laden Sie Dokumente hoch oder stellen Sie Fragen zu Ihren Inhalten</p>
+    </div>
+
+    <!-- Upload Section -->
+    <div class="upload-section @(showUpload ? "expanded" : "collapsed")">
+        <button class="btn btn-outline-primary mb-3" @onclick="ToggleUpload">
+            <i class="bi bi-cloud-upload"></i>
+            @(showUpload ? "Upload verbergen" : "Dokument hochladen")
+        </button>
+        
+        @if (showUpload)
+        {
+            <div class="upload-form">
+                <div class="upload-tabs">
+                    <button type="button" class="btn @(uploadMode == "text" ? "btn-primary" : "btn-outline-primary") me-2" 
+                            @onclick="@(() => SetUploadMode("text"))">
+                        <i class="bi bi-textarea-t"></i> Text eingeben
+                    </button>
+                    <button type="button" class="btn @(uploadMode == "file" ? "btn-primary" : "btn-outline-primary")" 
+                            @onclick="@(() => SetUploadMode("file"))">
+                        <i class="bi bi-file-earmark-arrow-up"></i> Datei hochladen
+                    </button>
+                </div>
+
+                @if (uploadMode == "text")
+                {
+                    <div class="text-upload-section">
+                        <div class="mb-3">
+                            <label for="documentText" class="form-label">Text/Dokument</label>
+                            <textarea @bind="documentText" class="form-control" id="documentText" rows="6" 
+                                      placeholder="Fügen Sie hier Ihren Text ein..."></textarea>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="file-upload-section">
+                        <div class="mb-3">
+                            <label for="fileInput" class="form-label">Datei auswählen</label>
+                            <InputFile OnChange="HandleFileSelection" class="form-control" id="fileInput" 
+                                      accept=".txt,.md,.pdf,.docx" />
+                            <div class="form-text">
+                                Unterstützte Formate: .txt, .md, .pdf, .docx (max. @MaxUploadSizeMB MB)
+                            </div>
+                            @if (selectedFile != null)
+                            {
+                                <div class="selected-file-info mt-2">
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-file-earmark"></i>
+                                        <strong>@selectedFile.Name</strong> 
+                                        <span class="text-muted">(@FormatFileSize(selectedFile.Size))</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="documentId" class="form-label">Dokument ID (optional)</label>
+                        <input @bind="documentId" type="text" class="form-control" id="documentId" 
+                               placeholder="Eindeutige ID für das Dokument">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="metadata" class="form-label">Metadaten (optional)</label>
+                        <input @bind="metadata" type="text" class="form-control" id="metadata" 
+                               placeholder="Zusätzliche Informationen">
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="chunkSize" class="form-label">Chunk-Größe</label>
+                        <input @bind="chunkSize" type="number" class="form-control" id="chunkSize" 
+                               min="100" max="2000" placeholder="1000">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="chunkOverlap" class="form-label">Chunk-Überlappung</label>
+                        <input @bind="chunkOverlap" type="number" class="form-control" id="chunkOverlap" 
+                               min="0" max="500" placeholder="200">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" @onclick="UploadDocument" disabled="@(isUploading || !CanUpload())">
+                    @if (isUploading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <text>@(uploadMode == "file" ? "Datei wird hochgeladen..." : "Text wird verarbeitet...")</text>
+                    }
+                    else
+                    {
+                        <i class="bi bi-upload me-2"></i>
+                        <text>@(uploadMode == "file" ? "Datei hochladen" : "Text hochladen")</text>
+                    }
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-messages" @ref="chatContainer">
+        @foreach (var message in messages)
+        {
+            <div class="message @message.Type">
+                <div class="message-content">
+                    @if (message.Type == "user")
+                    {
+                        <div class="message-header">
+                            <i class="bi bi-person-fill"></i>
+                            <span>Sie</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="message-header">
+                            <i class="bi bi-robot"></i>
+                            <span>DriftMind AI</span>
+                        </div>
+                    }
+                    <div class="message-text">
+                        @((MarkupString)message.Content.Replace("\n", "<br>"))
+                    </div>
+                    @if (message.Type == "assistant" && message.Results?.Count > 0)
+                    {
+                        <div class="search-results">
+                            <h6><i class="bi bi-search"></i> Gefundene Quellen:</h6>
+                            @foreach (var result in message.Results.Take(3))
+                            {
+                                <div class="result-item">
+                                    <div class="result-score">Score: @result.Score.ToString("F2")</div>
+                                    <div class="result-content">@result.Content.Substring(0, Math.Min(200, result.Content.Length))...</div>
+                                    <div class="result-meta">
+                                        <small class="text-muted">
+                                            Dokument: @result.DocumentId | Chunk: @result.ChunkIndex
+                                        </small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <div class="message-time">
+                        @message.Timestamp.ToString("HH:mm")
+                    </div>
+                </div>
+            </div>
+        }
+        
+        @if (isSearching)
+        {
+            <div class="message assistant">
+                <div class="message-content">
+                    <div class="message-header">
+                        <i class="bi bi-robot"></i>
+                        <span>DriftMind AI</span>
+                    </div>
+                    <div class="typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input">
+        <div class="input-group">
+            <input @bind="currentMessage" @onkeypress="HandleKeyPress" type="text" class="form-control" 
+                   placeholder="Stellen Sie eine Frage zu Ihren Dokumenten..." disabled="@isSearching">
+            <button class="btn btn-primary" @onclick="SendMessage" disabled="@(isSearching || string.IsNullOrWhiteSpace(currentMessage))">
+                @if (isSearching)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                }
+                else
+                {
+                    <i class="bi bi-send"></i>
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ChatMessage> messages = new();
+    private string currentMessage = "";
+    private string documentText = "";
+    private string documentId = "";
+    private string metadata = "";
+    private string uploadMode = "text"; // "text" oder "file"
+    private int chunkSize = 1000;
+    private int chunkOverlap = 200;
+    private bool showUpload = false;
+    private bool isSearching = false;
+    private bool isUploading = false;
+    private ElementReference chatContainer;
+    private IBrowserFile? selectedFile;
+    
+    // Konfigurierbarer Upload-Limit
+    private int MaxUploadSizeMB => Configuration.GetValue<int>("DriftMindApi:MaxUploadSizeMB", 3);
+    private long MaxUploadSizeBytes => MaxUploadSizeMB * 1024 * 1024;
+
+    protected override void OnInitialized()
+    {
+        messages.Add(new ChatMessage
+        {
+            Type = "assistant",
+            Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+            Timestamp = DateTime.Now
+        });
+    }
+
+    private void ToggleUpload()
+    {
+        showUpload = !showUpload;
+    }
+
+    private void SetUploadMode(string mode)
+    {
+        uploadMode = mode;
+        selectedFile = null;
+        documentText = "";
+    }
+
+    private async Task HandleFileSelection(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        
+        // Validate file size (configurable limit)
+        if (selectedFile.Size > MaxUploadSizeBytes)
+        {
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = $"Die ausgewählte Datei ist zu groß. Das Maximum sind {MaxUploadSizeMB}MB.",
+                Timestamp = DateTime.Now
+            });
+            selectedFile = null;
+            StateHasChanged();
+            await ScrollToBottom();
+            return;
+        }
+
+        // Validate file extension
+        var allowedExtensions = new[] { ".txt", ".md", ".pdf", ".docx" };
+        var fileExtension = Path.GetExtension(selectedFile.Name).ToLowerInvariant();
+        
+        if (!allowedExtensions.Contains(fileExtension))
+        {
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = $"Dateityp '{fileExtension}' wird nicht unterstützt. Erlaubte Formate: .txt, .md, .pdf, .docx",
+                Timestamp = DateTime.Now
+            });
+            selectedFile = null;
+            StateHasChanged();
+            await ScrollToBottom();
+            return;
+        }
+
+        StateHasChanged();
+    }
+
+    private bool CanUpload()
+    {
+        if (uploadMode == "text")
+            return !string.IsNullOrWhiteSpace(documentText);
+        else
+            return selectedFile != null;
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] suffixes = { "B", "KB", "MB", "GB" };
+        int suffixIndex = 0;
+        double size = bytes;
+
+        while (size >= 1024 && suffixIndex < suffixes.Length - 1)
+        {
+            size /= 1024;
+            suffixIndex++;
+        }
+
+        return $"{size:F1} {suffixes[suffixIndex]}";
+    }
+
+    private async Task UploadDocument()
+    {
+        if (!CanUpload())
+            return;
+
+        isUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            if (uploadMode == "text")
+            {
+                // Text Upload
+                var uploadRequest = new UploadRequest
+                {
+                    Text = documentText,
+                    DocumentId = string.IsNullOrWhiteSpace(documentId) ? null : documentId,
+                    Metadata = string.IsNullOrWhiteSpace(metadata) ? null : metadata,
+                    ChunkSize = chunkSize,
+                    ChunkOverlap = chunkOverlap
+                };
+
+                var response = await ApiService.UploadDocumentAsync(uploadRequest);
+                
+                if (response != null && response.Success)
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        Type = "assistant",
+                        Content = $"Text erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
+                        Timestamp = DateTime.Now
+                    });
+                }
+                else
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        Type = "assistant",
+                        Content = "Fehler beim Hochladen des Textes. Bitte überprüfen Sie, ob die DriftMind API läuft und erreichbar ist.",
+                        Timestamp = DateTime.Now
+                    });
+                }
+            }
+            else if (selectedFile != null)
+            {
+                // File Upload
+                using var stream = selectedFile.OpenReadStream(maxAllowedSize: MaxUploadSizeBytes);
+                
+                var response = await ApiService.UploadFileAsync(
+                    stream, 
+                    selectedFile.Name, 
+                    string.IsNullOrWhiteSpace(documentId) ? null : documentId,
+                    string.IsNullOrWhiteSpace(metadata) ? null : metadata,
+                    chunkSize,
+                    chunkOverlap
+                );
+                
+                if (response != null && response.Success)
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        Type = "assistant",
+                        Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. " +
+                                 $"Dateigröße: {FormatFileSize(response.FileSizeInBytes)}, Typ: {response.FileType}. " +
+                                 $"Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
+                        Timestamp = DateTime.Now
+                    });
+                }
+                else
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        Type = "assistant",
+                        Content = "Fehler beim Hochladen der Datei. Bitte überprüfen Sie, ob die DriftMind API läuft und erreichbar ist.",
+                        Timestamp = DateTime.Now
+                    });
+                }
+            }
+
+            // Formular zurücksetzen
+            documentText = "";
+            documentId = "";
+            metadata = "";
+            selectedFile = null;
+            chunkSize = 1000;
+            chunkOverlap = 200;
+            showUpload = false;
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = $"Fehler beim Hochladen: {ex.Message}",
+                Timestamp = DateTime.Now
+            });
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(currentMessage) || isSearching)
+            return;
+
+        var userMessage = currentMessage;
+        currentMessage = "";
+
+        messages.Add(new ChatMessage
+        {
+            Type = "user",
+            Content = userMessage,
+            Timestamp = DateTime.Now
+        });
+
+        isSearching = true;
+        StateHasChanged();
+        await ScrollToBottom();
+
+        try
+        {
+            var searchRequest = new SearchRequest
+            {
+                Query = userMessage,
+                MaxResults = 10,
+                UseSemanticSearch = true,
+                IncludeAnswer = true
+            };
+
+            var response = await ApiService.SearchAsync(searchRequest);
+            
+            if (response != null && response.Success)
+            {
+                var chatResults = response.Results.Select(r => new ChatMessage.SearchResult
+                {
+                    Content = r.Content,
+                    DocumentId = r.DocumentId,
+                    ChunkIndex = r.ChunkIndex,
+                    Score = r.Score
+                }).ToList();
+
+                var answerContent = !string.IsNullOrEmpty(response.GeneratedAnswer) 
+                    ? response.GeneratedAnswer 
+                    : "Basierend auf Ihren Dokumenten konnte ich eine Antwort finden. Siehe die Quellen unten.";
+
+                messages.Add(new ChatMessage
+                {
+                    Type = "assistant",
+                    Content = answerContent,
+                    Timestamp = DateTime.Now,
+                    Results = chatResults
+                });
+            }
+            else
+            {
+                messages.Add(new ChatMessage
+                {
+                    Type = "assistant",
+                    Content = "Entschuldigung, ich konnte keine relevanten Informationen in Ihren Dokumenten finden. Versuchen Sie es mit einer anderen Formulierung oder laden Sie zunächst Dokumente hoch.",
+                    Timestamp = DateTime.Now
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = $"Entschuldigung, es gab einen Fehler bei der Suche: {ex.Message}. Bitte überprüfen Sie, ob die DriftMind API läuft.",
+                Timestamp = DateTime.Now
+            });
+        }
+        finally
+        {
+            isSearching = false;
+            StateHasChanged();
+            await ScrollToBottom();
+        }
+    }
+
+    private string GenerateDemoAnswer(string query)
+    {
+        return $"Das ist eine Demo-Antwort für Ihre Frage: '{query}'. In der echten Implementierung würde hier die GPT-4o generierte Antwort basierend auf Ihren hochgeladenen Dokumenten stehen.";
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(50);
+        await JSRuntime.InvokeVoidAsync("scrollToBottom", chatContainer);
+    }
+
+    private class ChatMessage
+    {
+        public string Type { get; set; } = "";
+        public string Content { get; set; } = "";
+        public DateTime Timestamp { get; set; }
+        public List<SearchResult>? Results { get; set; }
+        
+        public class SearchResult
+        {
+            public string Content { get; set; } = "";
+            public string DocumentId { get; set; } = "";
+            public int ChunkIndex { get; set; }
+            public double Score { get; set; }
+        }
+    }
+}

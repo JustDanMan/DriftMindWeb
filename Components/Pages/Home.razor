@@ -1,0 +1,55 @@
+﻿@page "/"
+
+<PageTitle>DriftMindWeb</PageTitle>
+
+<div class="hero-section">
+    <h1>Willkommen bei DriftMindWeb!</h1>
+    <p class="lead">Ihre intelligente Blazor-Anwendung mit KI-gestützter Dokumentensuche und Chat-Funktionalität.</p>
+    
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-cloud-upload"></i>
+                </div>
+                <h3>Dokumente & Dateien hochladen</h3>
+                <p>Laden Sie Texte direkt ein oder unterstützte Dateiformate (.txt, .md, .pdf, .docx) hoch. Die Inhalte werden automatisch in durchsuchbare Chunks aufgeteilt und mit KI-Embeddings versehen.</p>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h3>Intelligente Suche</h3>
+                <p>Nutzen Sie semantische Suche mit Azure AI und erhalten Sie präzise Antworten durch GPT-4o Integration.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="cta-section mt-5">
+        <a href="/chat" class="btn btn-primary btn-lg">
+            <i class="bi bi-chat-dots me-2"></i>
+            Chat starten
+        </a>
+        <p class="mt-3 text-muted">Starten Sie jetzt und chatten Sie mit Ihren Dokumenten!</p>
+    </div>
+</div>
+
+<div class="info-section mt-5">
+    <div class="alert alert-info" role="alert">
+        <h4 class="alert-heading">
+            <i class="bi bi-info-circle me-2"></i>
+            DriftMind API Integration
+        </h4>
+        <p>Diese Anwendung nutzt die DriftMind Text Processing API für:</p>
+        <ul class="mb-0">
+            <li><strong>Text & File Upload:</strong> Direkte Texteingabe oder Datei-Upload (.txt, .md, .pdf, .docx)</li>
+            <li><strong>Text Chunking:</strong> Intelligente Aufteilung von Texten in überlappende Chunks</li>
+            <li><strong>Embedding Generation:</strong> Vektorrepräsentationen mit Azure OpenAI</li>
+            <li><strong>Vector Search:</strong> Speicherung und Suche in Azure AI Search</li>
+            <li><strong>GPT-4o Chat:</strong> KI-gestützte Antworten basierend auf Ihren Dokumenten</li>
+        </ul>
+    </div>
+</div>
