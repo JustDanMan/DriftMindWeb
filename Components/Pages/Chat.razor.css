@@ -349,3 +349,151 @@
         transform: translateY(0);
     }
 }
+
+/* Markdown Styling */
+.message-bubble h1,
+.message-bubble h2,
+.message-bubble h3,
+.message-bubble h4,
+.message-bubble h5,
+.message-bubble h6 {
+    color: #4db8ff;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.message-bubble h1 { font-size: 1.5rem; }
+.message-bubble h2 { font-size: 1.3rem; }
+.message-bubble h3 { font-size: 1.1rem; }
+.message-bubble h4 { font-size: 1rem; }
+
+.message-bubble p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.message-bubble ul,
+.message-bubble ol {
+    margin: 0.5rem 0 1rem 1.5rem;
+    line-height: 1.6;
+}
+
+.message-bubble li {
+    margin-bottom: 0.3rem;
+}
+
+.message-bubble blockquote {
+    border-left: 3px solid #4db8ff;
+    padding-left: 1rem;
+    margin: 1rem 0;
+    font-style: italic;
+    background-color: rgba(77, 184, 255, 0.1);
+    border-radius: 0 4px 4px 0;
+    padding: 0.8rem 1rem;
+}
+
+.message-bubble code {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 0.9em;
+    color: #ffc107;
+}
+
+.message-bubble pre {
+    background-color: #1e1e1e;
+    border: 1px solid #6c757d;
+    border-radius: 6px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 1rem 0;
+}
+
+.message-bubble pre code {
+    background: none;
+    padding: 0;
+    color: #e0e0e0;
+    font-size: 0.85em;
+}
+
+.message-bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.message-bubble th,
+.message-bubble td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #6c757d;
+}
+
+.message-bubble th {
+    background-color: rgba(77, 184, 255, 0.2);
+    font-weight: 600;
+    color: #4db8ff;
+}
+
+.message-bubble a {
+    color: #4db8ff;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.message-bubble a:hover {
+    border-bottom-color: #4db8ff;
+}
+
+.message-bubble strong,
+.message-bubble b {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.message-bubble em,
+.message-bubble i {
+    font-style: italic;
+    color: #e0e0e0;
+}
+
+.message-bubble hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #6c757d, transparent);
+    margin: 1.5rem 0;
+}
+
+/* Task Lists */
+.message-bubble input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: #4db8ff;
+}
+
+/* Math rendering */
+.message-bubble .math {
+    color: #ffc107;
+    font-family: 'Times New Roman', serif;
+}
+
+/* Footnotes */
+.message-bubble .footnote-ref {
+    color: #4db8ff;
+    text-decoration: none;
+    font-size: 0.8em;
+    vertical-align: super;
+}
+
+.message-bubble .footnote-def {
+    font-size: 0.9em;
+    color: #b0b0b0;
+    border-top: 1px solid #6c757d;
+    padding-top: 0.5rem;
+    margin-top: 1rem;
+}

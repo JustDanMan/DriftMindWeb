@@ -2,6 +2,7 @@
 @using DriftMindWeb.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject IDriftMindApiService ApiService
+@inject IMarkdownService MarkdownService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
 @rendermode InteractiveServer
@@ -127,7 +128,14 @@
                         </div>
                     }
                     <div class="message-bubble">
-                        @((MarkupString)message.Content.Replace("\n", "<br>"))
+                        @if (message.Type == "assistant")
+                        {
+                            @((MarkupString)MarkdownService.ToHtml(message.Content))
+                        }
+                        else
+                        {
+                            @((MarkupString)message.Content.Replace("\n", "<br>"))
+                        }
                         
                         @if (message.Type == "assistant" && message.Results?.Count > 0)
                         {

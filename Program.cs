@@ -25,6 +25,9 @@ builder.Services.AddHttpClient();
 // Add DriftMind API Service
 builder.Services.AddScoped<IDriftMindApiService, DriftMindApiService>();
 
+// Add Markdown Service
+builder.Services.AddScoped<IMarkdownService, MarkdownService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
