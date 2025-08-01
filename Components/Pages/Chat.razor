@@ -73,27 +73,49 @@
                     </div>
                 }
                 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="documentId" class="form-label">Dokument ID (optional)</label>
-                        <input @bind="documentId" type="text" class="form-control" id="documentId" 
-                               placeholder="Eindeutige ID für das Dokument">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="metadata" class="form-label">Metadaten (optional)</label>
-                        <input @bind="metadata" type="text" class="form-control" id="metadata" 
-                               placeholder="Zusätzliche Informationen">
-                    </div>
+                <!-- Advanced Options Toggle -->
+                <div class="mb-3">
+                    <button class="btn btn-outline-secondary btn-sm" 
+                            type="button" 
+                            data-bs-toggle="collapse" 
+                            data-bs-target="#advancedOptions" 
+                            aria-expanded="false" 
+                            aria-controls="advancedOptions"
+                            @onclick="() => showAdvancedOptions = !showAdvancedOptions">
+                        <i class="bi bi-gear me-2"></i>
+                        Erweiterte Optionen
+                        <i class="bi @(showAdvancedOptions ? "bi-chevron-up" : "bi-chevron-down") ms-2"></i>
+                    </button>
                 </div>
-                
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label for="chunkSize" class="form-label">Chunk-Größe</label>
-                        <input @bind="chunkSize" type="number" class="form-control" id="chunkSize" min="100" max="2000">
-                    </div>
-                    <div class="col-md-6">
-                        <label for="chunkOverlap" class="form-label">Chunk-Überlappung</label>
-                        <input @bind="chunkOverlap" type="number" class="form-control" id="chunkOverlap" min="0" max="500">
+
+                <!-- Advanced Options Content -->
+                <div class="collapse" id="advancedOptions">
+                    <div class="advanced-options-content mb-3">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="documentId" class="form-label">Dokument ID (optional)</label>
+                                <input @bind="documentId" type="text" class="form-control" id="documentId" 
+                                       placeholder="Eindeutige ID für das Dokument">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="metadata" class="form-label">Metadaten (optional)</label>
+                                <input @bind="metadata" type="text" class="form-control" id="metadata" 
+                                       placeholder="Zusätzliche Informationen">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="chunkSize" class="form-label">Chunk-Größe</label>
+                                <input @bind="chunkSize" type="number" class="form-control" id="chunkSize" min="100" max="2000">
+                                <div class="form-text">Standard: 300 Zeichen</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="chunkOverlap" class="form-label">Chunk-Überlappung</label>
+                                <input @bind="chunkOverlap" type="number" class="form-control" id="chunkOverlap" min="0" max="500">
+                                <div class="form-text">Standard: 20 Zeichen</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -222,6 +244,42 @@
     </div>
 </div>
 
+<!-- Duplicate File Modal -->
+@if (showDuplicateModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+                        Datei bereits vorhanden
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p>Eine Datei mit dem Namen <strong>@duplicateFileName</strong> ist bereits vorhanden.</p>
+                    <p>Möchten Sie die bestehende Datei überschreiben oder den Upload abbrechen?</p>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Warnung:</strong> Das Überschreiben wird das bestehende Dokument und alle zugehörigen Chunks löschen.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelUpload">
+                        <i class="bi bi-x-circle me-2"></i>
+                        Abbrechen
+                    </button>
+                    <button type="button" class="btn btn-warning" @onclick="OverwriteFile">
+                        <i class="bi bi-arrow-repeat me-2"></i>
+                        Überschreiben
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<ChatMessage> messages = new();
     private string currentMessage = "";
@@ -229,13 +287,19 @@
     private string documentId = "";
     private string metadata = "";
     private string uploadMode = "text"; // "text" oder "file"
-    private int chunkSize = 1000;
-    private int chunkOverlap = 200;
+    private int chunkSize = 300;
+    private int chunkOverlap = 20;
     private bool showUpload = false;
     private bool isSearching = false;
     private bool isUploading = false;
+    private bool showAdvancedOptions = false;
     private ElementReference chatContainer;
     private IBrowserFile? selectedFile;
+    
+    // Duplikatsprüfung
+    private bool showDuplicateModal = false;
+    private string? duplicateFileName = null;
+    private string? existingDocumentId = null;
     
     // Cache für DocumentId -> FileName Mapping
     private Dictionary<string, string> documentNameCache = new();
@@ -347,44 +411,25 @@
             }
             else if (selectedFile != null)
             {
+                // Prüfe zuerst auf Duplikate
+                var (exists, existingDocId) = await CheckFileExists(selectedFile.Name);
+                if (exists && !string.IsNullOrEmpty(existingDocId))
+                {
+                    // Zeige Duplikat-Modal
+                    duplicateFileName = selectedFile.Name;
+                    existingDocumentId = existingDocId;
+                    showDuplicateModal = true;
+                    isUploading = false;
+                    StateHasChanged();
+                    return;
+                }
+
                 // File Upload
-                using var stream = selectedFile.OpenReadStream(maxAllowedSize: MaxUploadSizeBytes);
-                
-                var response = await ApiService.UploadFileAsync(
-                    stream, 
-                    selectedFile.Name, 
-                    string.IsNullOrWhiteSpace(documentId) ? null : documentId,
-                    string.IsNullOrWhiteSpace(metadata) ? null : metadata,
-                    chunkSize,
-                    chunkOverlap
-                );
-                
-                if (response != null && response.Success)
-                {
-                    messages.Add(new ChatMessage
-                    {
-                        Type = "assistant",
-                        Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Dateigröße: {FormatFileSize(response.FileSizeInBytes)}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
-                        Timestamp = DateTime.Now
-                    });
-                }
-                else
-                {
-                    messages.Add(new ChatMessage
-                    {
-                        Type = "assistant",
-                        Content = "Fehler beim Hochladen der Datei. Bitte überprüfen Sie, ob die DriftMind API läuft und erreichbar ist.",
-                        Timestamp = DateTime.Now
-                    });
-                }
+                await PerformFileUpload();
             }
             
-            // Reset form
-            documentText = "";
-            selectedFile = null;
-            documentId = "";
-            metadata = "";
-            showUpload = false;
+            // Reset form nach erfolgreichem Upload
+            ResetUploadForm();
         }
         finally
         {
@@ -392,6 +437,15 @@
             StateHasChanged();
             await ScrollToBottom();
         }
+    }
+
+    private void ResetUploadForm()
+    {
+        documentText = "";
+        selectedFile = null;
+        documentId = "";
+        metadata = "";
+        showUpload = false;
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
@@ -550,6 +604,122 @@
     {
         // Verwende Cache oder DocumentId als Fallback
         return documentNameCache.TryGetValue(documentId, out var cachedName) ? cachedName : documentId;
+    }
+
+    private async Task<(bool exists, string? documentId)> CheckFileExists(string fileName)
+    {
+        try
+        {
+            // Lade alle Dokumente und suche nach dem Dateinamen
+            var response = await ApiService.GetDocumentsAsync(100, 0, null);
+            if (response?.Success == true && response.Documents.Count > 0)
+            {
+                var existingDoc = response.Documents.FirstOrDefault(d => 
+                    string.Equals(d.FileName, fileName, StringComparison.OrdinalIgnoreCase));
+                
+                if (existingDoc != null)
+                {
+                    return (true, existingDoc.DocumentId);
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Bei Fehler nehmen wir an, dass die Datei nicht existiert
+        }
+
+        return (false, null);
+    }
+
+    private async Task<bool> PerformFileUpload()
+    {
+        if (selectedFile == null) return false;
+
+        try
+        {
+            using var stream = selectedFile.OpenReadStream(maxAllowedSize: MaxUploadSizeBytes);
+            
+            var response = await ApiService.UploadFileAsync(
+                stream, 
+                selectedFile.Name, 
+                string.IsNullOrWhiteSpace(documentId) ? null : documentId,
+                string.IsNullOrWhiteSpace(metadata) ? null : metadata,
+                chunkSize,
+                chunkOverlap
+            );
+            
+            if (response != null && response.Success)
+            {
+                messages.Add(new ChatMessage
+                {
+                    Type = "assistant",
+                    Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Dateigröße: {FormatFileSize(response.FileSizeInBytes)}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
+                    Timestamp = DateTime.Now
+                });
+                return true;
+            }
+            else
+            {
+                messages.Add(new ChatMessage
+                {
+                    Type = "assistant",
+                    Content = "Fehler beim Hochladen der Datei. Bitte überprüfen Sie, ob die DriftMind API läuft und erreichbar ist.",
+                    Timestamp = DateTime.Now
+                });
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = $"Fehler beim Hochladen der Datei: {ex.Message}",
+                Timestamp = DateTime.Now
+            });
+            return false;
+        }
+    }
+
+    private async Task OverwriteFile()
+    {
+        showDuplicateModal = false;
+        
+        try
+        {
+            // Lösche erst das existierende Dokument
+            if (!string.IsNullOrEmpty(existingDocumentId))
+            {
+                await ApiService.DeleteDocumentAsync(existingDocumentId);
+            }
+            
+            // Führe den Upload durch
+            var uploadSuccess = await PerformFileUpload();
+            
+            // Reset Form nur bei erfolgreichem Upload
+            if (uploadSuccess)
+            {
+                ResetUploadForm();
+                await ScrollToBottom();
+            }
+        }
+        finally
+        {
+            // Reset Modal-Variablen
+            duplicateFileName = null;
+            existingDocumentId = null;
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void CancelUpload()
+    {
+        showDuplicateModal = false;
+        duplicateFileName = null;
+        existingDocumentId = null;
+        isUploading = false;
+        StateHasChanged();
     }
 
     public class ChatMessage

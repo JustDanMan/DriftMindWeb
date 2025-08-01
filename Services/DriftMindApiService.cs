@@ -4,8 +4,8 @@ namespace DriftMindWeb.Services
 {
     public interface IDriftMindApiService
     {
-        Task<FileUploadResponse?> UploadTextAsFileAsync(string text, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200);
-        Task<FileUploadResponse?> UploadFileAsync(Stream fileStream, string fileName, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200);
+        Task<FileUploadResponse?> UploadTextAsFileAsync(string text, string? documentId = null, string? metadata = null, int chunkSize = 300, int chunkOverlap = 20);
+        Task<FileUploadResponse?> UploadFileAsync(Stream fileStream, string fileName, string? documentId = null, string? metadata = null, int chunkSize = 300, int chunkOverlap = 20);
         Task<SearchResponse?> SearchAsync(SearchRequest request);
         Task<DocumentListResponse?> GetDocumentsAsync(int maxResults = 50, int skip = 0, string? documentIdFilter = null);
         Task<bool> DeleteDocumentAsync(string documentId);
@@ -26,7 +26,7 @@ namespace DriftMindWeb.Services
             _baseUrl = _configuration["DriftMindApi:BaseUrl"] ?? "http://localhost:5175";
         }
 
-        public async Task<FileUploadResponse?> UploadTextAsFileAsync(string text, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200)
+        public async Task<FileUploadResponse?> UploadTextAsFileAsync(string text, string? documentId = null, string? metadata = null, int chunkSize = 300, int chunkOverlap = 20)
         {
             try
             {
@@ -48,7 +48,7 @@ namespace DriftMindWeb.Services
             }
         }
 
-        public async Task<FileUploadResponse?> UploadFileAsync(Stream fileStream, string fileName, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200)
+        public async Task<FileUploadResponse?> UploadFileAsync(Stream fileStream, string fileName, string? documentId = null, string? metadata = null, int chunkSize = 300, int chunkOverlap = 20)
         {
             try
             {

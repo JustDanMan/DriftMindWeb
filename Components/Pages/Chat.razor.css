@@ -565,3 +565,47 @@
     padding-top: 0.5rem;
     margin-top: 1rem;
 }
+
+/* Advanced Options */
+.advanced-options-content {
+    background-color: rgba(255, 255, 255, 0.02);
+    border: 1px solid #6c757d;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 0.5rem;
+}
+
+.advanced-options-content .form-text {
+    color: #999;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* Advanced Options Toggle Button */
+.btn-outline-secondary:hover {
+    background-color: rgba(108, 117, 125, 0.1);
+}
+
+.btn-outline-secondary .bi-chevron-up,
+.btn-outline-secondary .bi-chevron-down {
+    transition: transform 0.2s ease;
+}
+
+/* Duplicate Modal Styling */
+.modal-content {
+    background-color: #2a2a2a;
+    border: 1px solid #6c757d;
+    color: #e0e0e0;
+}
+
+.modal-header {
+    border-bottom-color: #6c757d;
+}
+
+.modal-footer {
+    border-top-color: #6c757d;
+}
+
+.modal-title {
+    color: #ffffff;
+}
