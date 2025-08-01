@@ -1,0 +1,30 @@
+{
+    "name": "DriftMindWeb",
+    "short_name": "DriftMind",
+    "description": "AI-powered document processing and search application",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1a1a1a",
+    "theme_color": "#4db8ff",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/favicon-simple.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/favicon.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/favicon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "categories": ["productivity", "utilities", "business"],
+    "lang": "de-DE"
+}
