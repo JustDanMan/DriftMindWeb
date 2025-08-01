@@ -139,18 +139,41 @@
                         
                         @if (message.Type == "assistant" && message.Results?.Count > 0)
                         {
+                            var collapseId = $"sources-{message.Id}";
                             <div class="search-results mt-3">
-                                <h6><i class="bi bi-search"></i> Gefundene Quellen:</h6>
-                                @foreach (var result in message.Results)
-                                {
-                                    <div class="result-item">
-                                        <div class="result-score">Score: @result.Score.ToString("F2")</div>
-                                        <div class="result-content">@result.Content.Substring(0, Math.Min(200, result.Content.Length))...</div>
-                                        <div class="result-meta">
-                                            Dokument: @result.DocumentId | Chunk: @result.ChunkIndex
-                                        </div>
+                                <button class="btn btn-outline-secondary btn-sm sources-toggle" 
+                                        type="button" 
+                                        data-bs-toggle="collapse" 
+                                        data-bs-target="#@collapseId" 
+                                        aria-expanded="false" 
+                                        aria-controls="@collapseId">
+                                    <i class="bi bi-search me-2"></i>
+                                    @message.Results.Count Quelle@(message.Results.Count != 1 ? "n" : "") anzeigen
+                                    <i class="bi bi-chevron-down ms-2 collapse-icon"></i>
+                                </button>
+                                
+                                <div class="collapse mt-2" id="@collapseId">
+                                    <div class="sources-content">
+                                        @foreach (var result in message.Results)
+                                        {
+                                            <div class="result-item">
+                                                <div class="result-header">
+                                                    <span class="result-score">
+                                                        <i class="bi bi-graph-up"></i>
+                                                        Relevanz: @result.Score.ToString("F2")
+                                                    </span>
+                                                    <span class="result-meta">
+                                                        <i class="bi bi-file-text"></i>
+                                                        @GetDisplayFileName(result.DocumentId) | Chunk @result.ChunkIndex
+                                                    </span>
+                                                </div>
+                                                <div class="result-content">
+                                                    @result.Content.Substring(0, Math.Min(300, result.Content.Length))@(result.Content.Length > 300 ? "..." : "")
+                                                </div>
+                                            </div>
+                                        }
                                     </div>
-                                }
+                                </div>
                             </div>
                         }
                     </div>
@@ -213,6 +236,9 @@
     private bool isUploading = false;
     private ElementReference chatContainer;
     private IBrowserFile? selectedFile;
+    
+    // Cache für DocumentId -> FileName Mapping
+    private Dictionary<string, string> documentNameCache = new();
     
     // Konfigurierbarer Upload-Limit
     private int MaxUploadSizeMB => Configuration.GetValue<int>("DriftMindApi:MaxUploadSizeMB", 3);
@@ -423,6 +449,20 @@
                 };
                 
                 messages.Add(chatMessage);
+                
+                // Lade Dateinamen für alle unique DocumentIds
+                if (chatMessage.Results?.Count > 0)
+                {
+                    var uniqueDocumentIds = chatMessage.Results.Select(r => r.DocumentId).Distinct().ToList();
+                    _ = Task.Run(async () =>
+                    {
+                        foreach (var docId in uniqueDocumentIds)
+                        {
+                            await GetDocumentFileName(docId);
+                        }
+                        await InvokeAsync(StateHasChanged);
+                    });
+                }
             }
             else
             {
@@ -474,8 +514,47 @@
         return $"{size:F1} {suffixes[suffixIndex]}";
     }
 
+    private async Task<string> GetDocumentFileName(string documentId)
+    {
+        // Prüfe Cache zuerst
+        if (documentNameCache.TryGetValue(documentId, out var cachedName))
+        {
+            return cachedName;
+        }
+
+        try
+        {
+            // Lade Dokument-Info von der API
+            var response = await ApiService.GetDocumentsAsync(1, 0, documentId);
+            if (response?.Success == true && response.Documents.Count > 0)
+            {
+                var document = response.Documents[0];
+                var fileName = !string.IsNullOrEmpty(document.FileName) ? document.FileName : documentId;
+                
+                // Cache das Ergebnis
+                documentNameCache[documentId] = fileName;
+                return fileName;
+            }
+        }
+        catch (Exception)
+        {
+            // Bei Fehler verwende DocumentId als Fallback
+        }
+
+        // Fallback: verwende DocumentId
+        documentNameCache[documentId] = documentId;
+        return documentId;
+    }
+
+    private string GetDisplayFileName(string documentId)
+    {
+        // Verwende Cache oder DocumentId als Fallback
+        return documentNameCache.TryGetValue(documentId, out var cachedName) ? cachedName : documentId;
+    }
+
     public class ChatMessage
     {
+        public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8]; // Kurze eindeutige ID
         public string Type { get; set; } = ""; // "user" oder "assistant"
         public string Content { get; set; } = "";
         public DateTime Timestamp { get; set; }
