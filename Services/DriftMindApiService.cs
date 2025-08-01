@@ -4,7 +4,7 @@ namespace DriftMindWeb.Services
 {
     public interface IDriftMindApiService
     {
-        Task<UploadResponse?> UploadDocumentAsync(UploadRequest request);
+        Task<FileUploadResponse?> UploadTextAsFileAsync(string text, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200);
         Task<FileUploadResponse?> UploadFileAsync(Stream fileStream, string fileName, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200);
         Task<SearchResponse?> SearchAsync(SearchRequest request);
         Task<DocumentListResponse?> GetDocumentsAsync(int maxResults = 50, int skip = 0, string? documentIdFilter = null);
@@ -26,32 +26,24 @@ namespace DriftMindWeb.Services
             _baseUrl = _configuration["DriftMindApi:BaseUrl"] ?? "http://localhost:5175";
         }
 
-        public async Task<UploadResponse?> UploadDocumentAsync(UploadRequest request)
+        public async Task<FileUploadResponse?> UploadTextAsFileAsync(string text, string? documentId = null, string? metadata = null, int chunkSize = 1000, int chunkOverlap = 200)
         {
             try
             {
-                var endpoint = _configuration["DriftMindApi:Endpoints:Upload"] ?? "/upload";
-                var url = $"{_baseUrl}{endpoint}";
+                // Erstelle einen eindeutigen Dateinamen
+                var uniqueId = Guid.NewGuid().ToString("N")[..8]; // Erste 8 Zeichen der GUID
+                var fileName = $"QuickNotes-{uniqueId}.txt";
                 
-                var response = await _httpClient.PostAsJsonAsync(url, request);
+                // Konvertiere Text zu Stream
+                var textBytes = System.Text.Encoding.UTF8.GetBytes(text);
+                using var textStream = new MemoryStream(textBytes);
                 
-                if (response.IsSuccessStatusCode)
-                {
-                    var content = await response.Content.ReadAsStringAsync();
-                    return JsonSerializer.Deserialize<UploadResponse>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-                }
-                else
-                {
-                    _logger.LogError("Upload failed with status code: {StatusCode}", response.StatusCode);
-                    return null;
-                }
+                // Verwende die bestehende UploadFileAsync Methode
+                return await UploadFileAsync(textStream, fileName, documentId, metadata, chunkSize, chunkOverlap);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error uploading document");
+                _logger.LogError(ex, "Error uploading text as file");
                 return null;
             }
         }
@@ -60,7 +52,7 @@ namespace DriftMindWeb.Services
         {
             try
             {
-                var endpoint = _configuration["DriftMindApi:Endpoints:UploadFile"] ?? "/upload/file";
+                var endpoint = _configuration["DriftMindApi:Endpoints:Upload"] ?? "/uploads";
                 var url = $"{_baseUrl}{endpoint}";
 
                 using var content = new MultipartFormDataContent();
@@ -196,23 +188,6 @@ namespace DriftMindWeb.Services
     }
 
     // DTOs für die API-Kommunikation
-    public class UploadRequest
-    {
-        public string Text { get; set; } = "";
-        public string? DocumentId { get; set; }
-        public string? Metadata { get; set; }
-        public int ChunkSize { get; set; } = 1000;
-        public int ChunkOverlap { get; set; } = 200;
-    }
-
-    public class UploadResponse
-    {
-        public string DocumentId { get; set; } = "";
-        public int ChunksCreated { get; set; }
-        public bool Success { get; set; }
-        public string Message { get; set; } = "";
-    }
-
     public class FileUploadResponse
     {
         public string DocumentId { get; set; } = "";

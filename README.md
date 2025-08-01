@@ -68,8 +68,7 @@ Edit `appsettings.Development.json` or `appsettings.json`:
     "BaseUrl": "https://your-driftmind-api-url.com",
     "MaxUploadSizeMB": 3,
     "Endpoints": {
-      "Upload": "/upload",
-      "UploadFile": "/upload/file",
+      "Upload": "/uploads",
       "Search": "/search",
       "Documents": "/documents"
     }
@@ -121,8 +120,7 @@ All API endpoints are configurable and can be adapted to your DriftMind API impl
 
 The application communicates with the DriftMind API through the following endpoints:
 
-- `POST /upload` - Text upload
-- `POST /upload/file` - File upload
+- `POST /uploads` - File upload (supports both direct files and text converted to temporary files)
 - `POST /search` - Document search
 - `POST /documents` - Retrieve document list
 - `DELETE /documents/{id}` - Delete document

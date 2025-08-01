@@ -84,31 +84,25 @@
                                placeholder="Zusätzliche Informationen">
                     </div>
                 </div>
-
+                
                 <div class="row mb-3">
                     <div class="col-md-6">
                         <label for="chunkSize" class="form-label">Chunk-Größe</label>
-                        <input @bind="chunkSize" type="number" class="form-control" id="chunkSize" 
-                               min="100" max="2000" placeholder="1000">
+                        <input @bind="chunkSize" type="number" class="form-control" id="chunkSize" min="100" max="2000">
                     </div>
                     <div class="col-md-6">
                         <label for="chunkOverlap" class="form-label">Chunk-Überlappung</label>
-                        <input @bind="chunkOverlap" type="number" class="form-control" id="chunkOverlap" 
-                               min="0" max="500" placeholder="200">
+                        <input @bind="chunkOverlap" type="number" class="form-control" id="chunkOverlap" min="0" max="500">
                     </div>
                 </div>
                 
-                <button class="btn btn-primary" @onclick="UploadDocument" disabled="@(isUploading || !CanUpload())">
+                <button class="btn btn-success" @onclick="UploadDocument" disabled="@isUploading">
                     @if (isUploading)
                     {
                         <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                        <text>@(uploadMode == "file" ? "Datei wird hochgeladen..." : "Text wird verarbeitet...")</text>
                     }
-                    else
-                    {
-                        <i class="bi bi-upload me-2"></i>
-                        <text>@(uploadMode == "file" ? "Datei hochladen" : "Text hochladen")</text>
-                    }
+                    <i class="bi bi-upload"></i>
+                    @(uploadMode == "text" ? "Text hochladen" : "Datei hochladen")
                 </button>
             </div>
         }
@@ -122,42 +116,39 @@
                 <div class="message-content">
                     @if (message.Type == "user")
                     {
-                        <div class="message-header">
+                        <div class="user-avatar">
                             <i class="bi bi-person-fill"></i>
-                            <span>Sie</span>
                         </div>
                     }
                     else
                     {
-                        <div class="message-header">
+                        <div class="ai-avatar">
                             <i class="bi bi-robot"></i>
-                            <span>DriftMind AI</span>
                         </div>
                     }
-                    <div class="message-text">
+                    <div class="message-bubble">
                         @((MarkupString)message.Content.Replace("\n", "<br>"))
-                    </div>
-                    @if (message.Type == "assistant" && message.Results?.Count > 0)
-                    {
-                        <div class="search-results">
-                            <h6><i class="bi bi-search"></i> Gefundene Quellen:</h6>
-                            @foreach (var result in message.Results.Take(3))
-                            {
-                                <div class="result-item">
-                                    <div class="result-score">Score: @result.Score.ToString("F2")</div>
-                                    <div class="result-content">@result.Content.Substring(0, Math.Min(200, result.Content.Length))...</div>
-                                    <div class="result-meta">
-                                        <small class="text-muted">
+                        
+                        @if (message.Type == "assistant" && message.Results?.Count > 0)
+                        {
+                            <div class="search-results mt-3">
+                                <h6><i class="bi bi-search"></i> Gefundene Quellen:</h6>
+                                @foreach (var result in message.Results)
+                                {
+                                    <div class="result-item">
+                                        <div class="result-score">Score: @result.Score.ToString("F2")</div>
+                                        <div class="result-content">@result.Content.Substring(0, Math.Min(200, result.Content.Length))...</div>
+                                        <div class="result-meta">
                                             Dokument: @result.DocumentId | Chunk: @result.ChunkIndex
-                                        </small>
+                                        </div>
                                     </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    <div class="message-time">
-                        @message.Timestamp.ToString("HH:mm")
+                                }
+                            </div>
+                        }
                     </div>
+                </div>
+                <div class="message-time">
+                    @message.Timestamp.ToString("HH:mm")
                 </div>
             </div>
         }
@@ -166,14 +157,15 @@
         {
             <div class="message assistant">
                 <div class="message-content">
-                    <div class="message-header">
+                    <div class="ai-avatar">
                         <i class="bi bi-robot"></i>
-                        <span>DriftMind AI</span>
                     </div>
-                    <div class="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
+                    <div class="message-bubble">
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -268,7 +260,7 @@
             messages.Add(new ChatMessage
             {
                 Type = "assistant",
-                Content = $"Dateityp '{fileExtension}' wird nicht unterstützt. Erlaubte Formate: .txt, .md, .pdf, .docx",
+                Content = $"Dateiformat '{fileExtension}' wird nicht unterstützt. Erlaubte Formate: .txt, .md, .pdf, .docx",
                 Timestamp = DateTime.Now
             });
             selectedFile = null;
@@ -280,59 +272,32 @@
         StateHasChanged();
     }
 
-    private bool CanUpload()
-    {
-        if (uploadMode == "text")
-            return !string.IsNullOrWhiteSpace(documentText);
-        else
-            return selectedFile != null;
-    }
-
-    private string FormatFileSize(long bytes)
-    {
-        string[] suffixes = { "B", "KB", "MB", "GB" };
-        int suffixIndex = 0;
-        double size = bytes;
-
-        while (size >= 1024 && suffixIndex < suffixes.Length - 1)
-        {
-            size /= 1024;
-            suffixIndex++;
-        }
-
-        return $"{size:F1} {suffixes[suffixIndex]}";
-    }
-
     private async Task UploadDocument()
     {
-        if (!CanUpload())
-            return;
-
+        if (isUploading) return;
+        
         isUploading = true;
         StateHasChanged();
-
+        
         try
         {
-            if (uploadMode == "text")
+            if (uploadMode == "text" && !string.IsNullOrWhiteSpace(documentText))
             {
-                // Text Upload
-                var uploadRequest = new UploadRequest
-                {
-                    Text = documentText,
-                    DocumentId = string.IsNullOrWhiteSpace(documentId) ? null : documentId,
-                    Metadata = string.IsNullOrWhiteSpace(metadata) ? null : metadata,
-                    ChunkSize = chunkSize,
-                    ChunkOverlap = chunkOverlap
-                };
-
-                var response = await ApiService.UploadDocumentAsync(uploadRequest);
+                // Text Upload - Erstelle temporäre Datei und lade sie hoch
+                var response = await ApiService.UploadTextAsFileAsync(
+                    documentText,
+                    string.IsNullOrWhiteSpace(documentId) ? null : documentId,
+                    string.IsNullOrWhiteSpace(metadata) ? null : metadata,
+                    chunkSize,
+                    chunkOverlap
+                );
                 
                 if (response != null && response.Success)
                 {
                     messages.Add(new ChatMessage
                     {
                         Type = "assistant",
-                        Content = $"Text erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
+                        Content = $"Text erfolgreich als Datei hochgeladen! Dateiname: {response.FileName}, Dokument-ID: {response.DocumentId}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
                         Timestamp = DateTime.Now
                     });
                 }
@@ -365,9 +330,7 @@
                     messages.Add(new ChatMessage
                     {
                         Type = "assistant",
-                        Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. " +
-                                 $"Dateigröße: {FormatFileSize(response.FileSizeInBytes)}, Typ: {response.FileType}. " +
-                                 $"Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
+                        Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Dateigröße: {FormatFileSize(response.FileSizeInBytes)}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
                         Timestamp = DateTime.Now
                     });
                 }
@@ -381,24 +344,13 @@
                     });
                 }
             }
-
-            // Formular zurücksetzen
+            
+            // Reset form
             documentText = "";
+            selectedFile = null;
             documentId = "";
             metadata = "";
-            selectedFile = null;
-            chunkSize = 1000;
-            chunkOverlap = 200;
             showUpload = false;
-        }
-        catch (Exception ex)
-        {
-            messages.Add(new ChatMessage
-            {
-                Type = "assistant",
-                Content = $"Fehler beim Hochladen: {ex.Message}",
-                Timestamp = DateTime.Now
-            });
         }
         finally
         {
@@ -410,7 +362,7 @@
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !e.ShiftKey)
+        if (e.Key == "Enter" && !isSearching && !string.IsNullOrWhiteSpace(currentMessage))
         {
             await SendMessage();
         }
@@ -418,63 +370,58 @@
 
     private async Task SendMessage()
     {
-        if (string.IsNullOrWhiteSpace(currentMessage) || isSearching)
-            return;
-
-        var userMessage = currentMessage;
+        if (isSearching || string.IsNullOrWhiteSpace(currentMessage)) return;
+        
+        var userMessage = currentMessage.Trim();
         currentMessage = "";
-
+        
         messages.Add(new ChatMessage
         {
             Type = "user",
             Content = userMessage,
             Timestamp = DateTime.Now
         });
-
+        
         isSearching = true;
         StateHasChanged();
         await ScrollToBottom();
-
+        
         try
         {
             var searchRequest = new SearchRequest
             {
                 Query = userMessage,
-                MaxResults = 10,
+                MaxResults = 5,
                 UseSemanticSearch = true,
                 IncludeAnswer = true
             };
-
+            
             var response = await ApiService.SearchAsync(searchRequest);
             
             if (response != null && response.Success)
             {
-                var chatResults = response.Results.Select(r => new ChatMessage.SearchResult
-                {
-                    Content = r.Content,
-                    DocumentId = r.DocumentId,
-                    ChunkIndex = r.ChunkIndex,
-                    Score = r.Score
-                }).ToList();
-
-                var answerContent = !string.IsNullOrEmpty(response.GeneratedAnswer) 
-                    ? response.GeneratedAnswer 
-                    : "Basierend auf Ihren Dokumenten konnte ich eine Antwort finden. Siehe die Quellen unten.";
-
-                messages.Add(new ChatMessage
+                var chatMessage = new ChatMessage
                 {
                     Type = "assistant",
-                    Content = answerContent,
+                    Content = response.GeneratedAnswer ?? "Keine Antwort generiert.",
                     Timestamp = DateTime.Now,
-                    Results = chatResults
-                });
+                    Results = response.Results?.Select(r => new SearchResult
+                    {
+                        Content = r.Content,
+                        DocumentId = r.DocumentId,
+                        ChunkIndex = r.ChunkIndex,
+                        Score = r.Score
+                    }).ToList() ?? new List<SearchResult>()
+                };
+                
+                messages.Add(chatMessage);
             }
             else
             {
                 messages.Add(new ChatMessage
                 {
                     Type = "assistant",
-                    Content = "Entschuldigung, ich konnte keine relevanten Informationen in Ihren Dokumenten finden. Versuchen Sie es mit einer anderen Formulierung oder laden Sie zunächst Dokumente hoch.",
+                    Content = "Entschuldigung, ich konnte keine Antwort auf Ihre Frage finden. Stellen Sie sicher, dass Sie relevante Dokumente hochgeladen haben.",
                     Timestamp = DateTime.Now
                 });
             }
@@ -484,7 +431,7 @@
             messages.Add(new ChatMessage
             {
                 Type = "assistant",
-                Content = $"Entschuldigung, es gab einen Fehler bei der Suche: {ex.Message}. Bitte überprüfen Sie, ob die DriftMind API läuft.",
+                Content = $"Ein Fehler ist aufgetreten: {ex.Message}",
                 Timestamp = DateTime.Now
             });
         }
@@ -496,30 +443,42 @@
         }
     }
 
-    private string GenerateDemoAnswer(string query)
-    {
-        return $"Das ist eine Demo-Antwort für Ihre Frage: '{query}'. In der echten Implementierung würde hier die GPT-4o generierte Antwort basierend auf Ihren hochgeladenen Dokumenten stehen.";
-    }
-
     private async Task ScrollToBottom()
     {
-        await Task.Delay(50);
+        await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("scrollToBottom", chatContainer);
     }
 
-    private class ChatMessage
+    private string FormatFileSize(long bytes)
     {
-        public string Type { get; set; } = "";
+        if (bytes == 0) return "0 B";
+        
+        string[] suffixes = { "B", "KB", "MB", "GB" };
+        int suffixIndex = 0;
+        double size = bytes;
+
+        while (size >= 1024 && suffixIndex < suffixes.Length - 1)
+        {
+            size /= 1024;
+            suffixIndex++;
+        }
+
+        return $"{size:F1} {suffixes[suffixIndex]}";
+    }
+
+    public class ChatMessage
+    {
+        public string Type { get; set; } = ""; // "user" oder "assistant"
         public string Content { get; set; } = "";
         public DateTime Timestamp { get; set; }
         public List<SearchResult>? Results { get; set; }
-        
-        public class SearchResult
-        {
-            public string Content { get; set; } = "";
-            public string DocumentId { get; set; } = "";
-            public int ChunkIndex { get; set; }
-            public double Score { get; set; }
-        }
+    }
+
+    public class SearchResult
+    {
+        public string Content { get; set; } = "";
+        public string DocumentId { get; set; } = "";
+        public int ChunkIndex { get; set; }
+        public double Score { get; set; }
     }
 }
