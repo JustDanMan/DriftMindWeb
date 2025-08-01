@@ -190,7 +190,13 @@
                                                     </span>
                                                 </div>
                                                 <div class="result-content">
-                                                    @result.Content.Substring(0, Math.Min(300, result.Content.Length))@(result.Content.Length > 300 ? "..." : "")
+                                                    @{
+                                                        // Teile verfügbaren Kontext gleichmäßig auf die Quellen auf
+                                                        var maxLengthPerSource = Math.Max(200, MaxContextLength / Math.Max(1, message.Results.Count));
+                                                        var displayLength = Math.Min(maxLengthPerSource, result.Content.Length);
+                                                        var displayContent = result.Content.Substring(0, displayLength);
+                                                    }
+                                                    @displayContent@(result.Content.Length > displayLength ? "..." : "")
                                                 </div>
                                             </div>
                                         }
@@ -303,6 +309,11 @@
     
     // Cache für DocumentId -> FileName Mapping
     private Dictionary<string, string> documentNameCache = new();
+    
+    // Konfigurierbare Chat-Parameter
+    private int MaxSourcesForAnswer => Configuration.GetValue<int>("ChatService:MaxSourcesForAnswer", 5);
+    private double MinScoreForAnswer => Configuration.GetValue<double>("ChatService:MinScoreForAnswer", 0.3);
+    private int MaxContextLength => Configuration.GetValue<int>("ChatService:MaxContextLength", 12000);
     
     // Konfigurierbarer Upload-Limit
     private int MaxUploadSizeMB => Configuration.GetValue<int>("DriftMindApi:MaxUploadSizeMB", 3);
@@ -479,7 +490,7 @@
             var searchRequest = new SearchRequest
             {
                 Query = userMessage,
-                MaxResults = 5,
+                MaxResults = MaxSourcesForAnswer,
                 UseSemanticSearch = true,
                 IncludeAnswer = true
             };
@@ -493,13 +504,15 @@
                     Type = "assistant",
                     Content = response.GeneratedAnswer ?? "Keine Antwort generiert.",
                     Timestamp = DateTime.Now,
-                    Results = response.Results?.Select(r => new SearchResult
-                    {
-                        Content = r.Content,
-                        DocumentId = r.DocumentId,
-                        ChunkIndex = r.ChunkIndex,
-                        Score = r.Score
-                    }).ToList() ?? new List<SearchResult>()
+                    Results = response.Results?
+                        .Where(r => r.Score >= MinScoreForAnswer) // Filter basierend auf MinScore
+                        .Select(r => new SearchResult
+                        {
+                            Content = r.Content,
+                            DocumentId = r.DocumentId,
+                            ChunkIndex = r.ChunkIndex,
+                            Score = r.Score
+                        }).ToList() ?? new List<SearchResult>()
                 };
                 
                 messages.Add(chatMessage);
