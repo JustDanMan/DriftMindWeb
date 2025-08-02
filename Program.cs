@@ -28,6 +28,9 @@ builder.Services.AddScoped<IDriftMindApiService, DriftMindApiService>();
 // Add Markdown Service
 builder.Services.AddScoped<IMarkdownService, MarkdownService>();
 
+// Add Controllers for API endpoints
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -42,6 +45,9 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+// Map Controllers
+app.MapControllers();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

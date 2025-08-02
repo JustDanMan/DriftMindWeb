@@ -93,10 +93,14 @@
 .document-actions {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
-.document-actions .btn {
+.document-actions .btn,
+.document-actions .download-btn {
     border-radius: 8px;
+    font-size: 0.875rem;
 }
 
 /* Document Stats */

@@ -132,7 +132,12 @@
                                 </p>
                             </div>
                             <div class="document-actions">
-                                <button class="btn btn-sm btn-outline-danger" 
+                                <DownloadButton DocumentId="@document.DocumentId" 
+                                              FileName="@document.FileName"
+                                              OnError="@(async (string error) => await HandleDownloadError(error))"
+                                              OnSuccess="@(async () => await HandleDownloadSuccess(document.FileName))" />
+                                
+                                <button class="btn btn-sm btn-outline-danger ms-2" 
                                         @onclick="() => ConfirmDelete(document.DocumentId)"
                                         disabled="@(isDeleting.Contains(document.DocumentId))">
                                     @if (isDeleting.Contains(document.DocumentId))
@@ -442,5 +447,20 @@
         }
 
         return $"{size:F1} {suffixes[suffixIndex]}";
+    }
+
+    private Task HandleDownloadError(string error)
+    {
+        // Hier könnten Sie eine Benachrichtigung anzeigen oder einen Toast verwenden
+        // Für jetzt loggen wir einfach zur Konsole
+        Console.WriteLine($"Download-Fehler: {error}");
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDownloadSuccess(string? fileName)
+    {
+        // Optional: Success-Feedback anzeigen
+        Console.WriteLine($"Download gestartet: {fileName ?? "Dokument"}");
+        return Task.CompletedTask;
     }
 }

@@ -180,14 +180,25 @@
                                         {
                                             <div class="result-item">
                                                 <div class="result-header">
-                                                    <span class="result-score">
-                                                        <i class="bi bi-graph-up"></i>
-                                                        Relevanz: @result.Score.ToString("F2")
-                                                    </span>
-                                                    <span class="result-meta">
-                                                        <i class="bi bi-file-text"></i>
-                                                        @GetDisplayFileName(result.DocumentId) | Chunk @result.ChunkIndex
-                                                    </span>
+                                                    <div class="result-meta-section">
+                                                        <span class="result-score">
+                                                            <i class="bi bi-graph-up"></i>
+                                                            Relevanz: @result.Score.ToString("F2")
+                                                        </span>
+                                                        <span class="result-meta">
+                                                            <i class="bi bi-file-text"></i>
+                                                            @GetDisplayFileName(result.DocumentId) | Chunk @result.ChunkIndex
+                                                        </span>
+                                                    </div>
+                                                    @if (result.IsFileAvailable || !string.IsNullOrEmpty(result.OriginalFileName))
+                                                    {
+                                                        <div class="result-actions">
+                                                            <DownloadButton DocumentId="@result.DocumentId" 
+                                                                          FileName="@result.OriginalFileName"
+                                                                          OnError="@(async (string error) => await HandleDownloadError(error))"
+                                                                          OnSuccess="@(async () => await HandleDownloadSuccess(result.OriginalFileName))" />
+                                                        </div>
+                                                    }
                                                 </div>
                                                 <div class="result-content">
                                                     @{
@@ -511,7 +522,9 @@
                             Content = r.Content,
                             DocumentId = r.DocumentId,
                             ChunkIndex = r.ChunkIndex,
-                            Score = r.Score
+                            Score = r.Score,
+                            OriginalFileName = r.OriginalFileName,
+                            IsFileAvailable = r.IsFileAvailable
                         }).ToList() ?? new List<SearchResult>()
                 };
                 
@@ -735,6 +748,31 @@
         StateHasChanged();
     }
 
+    private Task HandleDownloadError(string error)
+    {
+        messages.Add(new ChatMessage
+        {
+            Type = "system",
+            Content = $"Download-Fehler: {error}",
+            Timestamp = DateTime.Now
+        });
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleDownloadSuccess(string? fileName)
+    {
+        // Optional: Success-Meldung anzeigen
+        // messages.Add(new ChatMessage
+        // {
+        //     Type = "system",
+        //     Content = $"Download von '{fileName ?? "Dokument"}' gestartet.",
+        //     Timestamp = DateTime.Now
+        // });
+        // StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     public class ChatMessage
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8]; // Kurze eindeutige ID
@@ -750,5 +788,7 @@
         public string DocumentId { get; set; } = "";
         public int ChunkIndex { get; set; }
         public double Score { get; set; }
+        public string? OriginalFileName { get; set; }
+        public bool IsFileAvailable { get; set; }
     }
 }

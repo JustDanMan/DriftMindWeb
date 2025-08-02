@@ -1,0 +1,89 @@
+@using DriftMindWeb.Services
+@inject IDriftMindApiService ApiService
+
+@if (IsGeneratingToken)
+{
+    <button class="btn btn-outline-primary btn-sm download-btn" disabled>
+        <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+        Token wird generiert...
+    </button>
+}
+else if (!string.IsNullOrEmpty(DownloadUrl))
+{
+    <!-- Rein Blazor/HTML-native Download-Link -->
+    <a href="@DownloadUrl" 
+       target="_blank"
+       class="btn btn-success btn-sm download-btn"
+       title="@(FileName ?? "Dokument") herunterladen - Klicken zum Downloaden">
+        <i class="bi bi-download"></i>
+        Jetzt downloaden
+    </a>
+}
+else
+{
+    <button class="btn btn-outline-primary btn-sm download-btn" 
+            @onclick="PrepareDownload"
+            title="Download vorbereiten für @(FileName ?? "Dokument")">
+        <i class="bi bi-download"></i>
+        Download
+    </button>
+}
+
+@code {
+    [Parameter] public string DocumentId { get; set; } = "";
+    [Parameter] public string? FileName { get; set; }
+    [Parameter] public EventCallback<string> OnError { get; set; }
+    [Parameter] public EventCallback OnSuccess { get; set; }
+
+    private bool IsGeneratingToken { get; set; } = false;
+    private string? DownloadUrl { get; set; }
+    private Timer? ExpirationTimer { get; set; }
+
+    private async Task PrepareDownload()
+    {
+        if (IsGeneratingToken || string.IsNullOrEmpty(DocumentId))
+            return;
+
+        IsGeneratingToken = true;
+        StateHasChanged();
+
+        try
+        {
+            // Token generieren
+            var tokenResponse = await ApiService.GetDownloadTokenAsync(DocumentId, 15);
+            
+            if (tokenResponse?.Success == true)
+            {
+                // Download-URL bereitstellen
+                DownloadUrl = $"/api/download/file?token={Uri.EscapeDataString(tokenResponse.Token)}";
+                
+                // Auto-Cleanup nach 15 Minuten
+                ExpirationTimer?.Dispose();
+                ExpirationTimer = new Timer((_) => {
+                    DownloadUrl = null;
+                    InvokeAsync(StateHasChanged);
+                }, null, TimeSpan.FromMinutes(15), Timeout.InfiniteTimeSpan);
+                
+                await OnSuccess.InvokeAsync();
+            }
+            else
+            {
+                await OnError.InvokeAsync("Token konnte nicht generiert werden.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await OnError.InvokeAsync($"Download-Fehler: {ex.Message}");
+        }
+        finally
+        {
+            IsGeneratingToken = false;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+        ExpirationTimer?.Dispose();
+    }
+}

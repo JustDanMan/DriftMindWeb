@@ -9,6 +9,8 @@ namespace DriftMindWeb.Services
         Task<SearchResponse?> SearchAsync(SearchRequest request);
         Task<DocumentListResponse?> GetDocumentsAsync(int maxResults = 50, int skip = 0, string? documentIdFilter = null);
         Task<bool> DeleteDocumentAsync(string documentId);
+        Task<DownloadTokenResponse?> GetDownloadTokenAsync(string documentId, int expirationMinutes = 15);
+        Task<DownloadFileResponse?> DownloadFileAsync(string token);
     }
 
     public class DriftMindApiService : IDriftMindApiService
@@ -185,6 +187,94 @@ namespace DriftMindWeb.Services
                 return false;
             }
         }
+
+        public async Task<DownloadTokenResponse?> GetDownloadTokenAsync(string documentId, int expirationMinutes = 15)
+        {
+            try
+            {
+                var endpoint = _configuration["DriftMindApi:Endpoints:DownloadToken"] ?? "/download/token";
+                var url = $"{_baseUrl}{endpoint}";
+
+                var request = new DownloadTokenRequest
+                {
+                    DocumentId = documentId,
+                    ExpirationMinutes = expirationMinutes
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return JsonSerializer.Deserialize<DownloadTokenResponse>(responseContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                else
+                {
+                    _logger.LogError("Download token generation failed with status code: {StatusCode}", response.StatusCode);
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating download token for document {DocumentId}", documentId);
+                return null;
+            }
+        }
+
+        public async Task<DownloadFileResponse?> DownloadFileAsync(string token)
+        {
+            try
+            {
+                var endpoint = _configuration["DriftMindApi:Endpoints:DownloadFile"] ?? "/download/file";
+                var url = $"{_baseUrl}{endpoint}";
+
+                var request = new DownloadFileRequest { Token = token };
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(url, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                    var fileName = GetFileNameFromResponse(response) ?? "download";
+                    var contentType = response.Content.Headers.ContentType?.ToString() ?? "application/octet-stream";
+
+                    return new DownloadFileResponse
+                    {
+                        FileBytes = fileBytes,
+                        FileName = fileName,
+                        ContentType = contentType,
+                        Success = true
+                    };
+                }
+                else
+                {
+                    _logger.LogError("File download failed with status code: {StatusCode}", response.StatusCode);
+                    return new DownloadFileResponse { Success = false };
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file with token");
+                return new DownloadFileResponse { Success = false };
+            }
+        }
+
+        private string? GetFileNameFromResponse(HttpResponseMessage response)
+        {
+            if (response.Content.Headers.ContentDisposition?.FileName != null)
+            {
+                return response.Content.Headers.ContentDisposition.FileName.Trim('"');
+            }
+            return null;
+        }
     }
 
     // DTOs für die API-Kommunikation
@@ -226,6 +316,37 @@ namespace DriftMindWeb.Services
         public double Score { get; set; }
         public string? Metadata { get; set; }
         public DateTime CreatedAt { get; set; }
+        public string? OriginalFileName { get; set; }
+        public bool IsFileAvailable { get; set; }
+    }
+
+    // Download DTOs
+    public class DownloadTokenRequest
+    {
+        public string DocumentId { get; set; } = "";
+        public int ExpirationMinutes { get; set; } = 15;
+    }
+
+    public class DownloadTokenResponse
+    {
+        public string Token { get; set; } = "";
+        public string DocumentId { get; set; } = "";
+        public DateTime ExpiresAt { get; set; }
+        public string DownloadUrl { get; set; } = "";
+        public bool Success { get; set; }
+    }
+
+    public class DownloadFileRequest
+    {
+        public string Token { get; set; } = "";
+    }
+
+    public class DownloadFileResponse
+    {
+        public byte[] FileBytes { get; set; } = Array.Empty<byte>();
+        public string FileName { get; set; } = "";
+        public string ContentType { get; set; } = "";
+        public bool Success { get; set; }
     }
 
     // Document Management DTOs

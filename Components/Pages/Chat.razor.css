@@ -261,6 +261,47 @@
     gap: 0.5rem;
 }
 
+.result-meta-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.result-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.download-btn {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    text-decoration: none; /* Für <a> Tags */
+}
+
+.download-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    text-decoration: none; /* Für <a> Tags */
+}
+
+/* Spezielle Styles für Download-bereit Zustand */
+.download-btn.btn-success:hover {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.download-btn i {
+    font-size: 0.7rem;
+}
+
 .result-score {
     font-size: 0.75rem;
     color: #4db8ff;
