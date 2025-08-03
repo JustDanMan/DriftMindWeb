@@ -1,6 +1,6 @@
 version: 2
 updates:
-  # .NET NuGet packages
+  # .NET 8 NuGet packages
   - package-ecosystem: "nuget"
     directory: "/"
     schedule:
@@ -10,46 +10,34 @@ updates:
     assignees:
       - "JustDanMan"
     commit-message:
-      prefix: "deps"
+      prefix: "deps(.NET 8)"
       include: "scope"
     labels:
       - "dependencies"
       - "dotnet"
+    target-branch: "main"
+    # Block major version updates (e.g., .NET 8 → 9)
+    ignore:
+      - dependency-name: "Microsoft.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "System.*"
+        update-types: ["version-update:semver-major"]
     groups:
-      # Group Blazor/ASP.NET Core components
-      blazor-aspnet:
+      # Group Markdown processing libraries
+      markdown-processing:
+        patterns:
+          - "Markdig"
+          - "Markdig.*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group ASP.NET Core 8 packages (framework updates)
+      aspnetcore-framework:
         patterns:
           - "Microsoft.AspNetCore.*"
-          - "Microsoft.AspNetCore.Components*"
-          - "Microsoft.JSInterop"
-      # Group Microsoft extensions and hosting
-      microsoft-extensions:
-        patterns:
           - "Microsoft.Extensions.*"
-          - "Microsoft.Extensions.Hosting*"
-          - "Microsoft.Extensions.DependencyInjection*"
-          - "Microsoft.Extensions.Configuration*"
-          - "Microsoft.Extensions.Http*"
-      # Group HTTP and API client libraries
-      http-clients:
-        patterns:
-          - "System.Net.Http*"
-          - "System.Text.Json"
-          - "Newtonsoft.Json"
-      # Group content processing libraries
-      content-processing:
-        patterns:
-          - "Markdig*"
-          - "System.Text.*"
-      # Group testing frameworks
-      testing:
-        patterns:
-          - "Microsoft.NET.Test.Sdk"
-          - "xunit*"
-          - "NUnit*"
-          - "Moq"
-          - "FluentAssertions"
-          - "Microsoft.AspNetCore.Mvc.Testing"
+        update-types:
+          - "patch"
 
   # GitHub Actions workflows
   - package-ecosystem: "github-actions"
@@ -66,18 +54,30 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+    target-branch: "main"
 
-  # Docker dependencies (if using Dockerfile)
+  # Docker dependencies (.NET 8 runtime)
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
       time: "06:00"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     assignees:
       - "JustDanMan"
     commit-message:
-      prefix: "docker"
+      prefix: "docker(.NET 8)"
     labels:
       - "dependencies"
       - "docker"
+    target-branch: "main"
+    groups:
+      # Group .NET Docker images
+      dotnet-runtime:
+        patterns:
+          - "mcr.microsoft.com/dotnet/aspnet"
+          - "mcr.microsoft.com/dotnet/sdk"
+        update-types:
+          - "minor"
+          - "patch"
