@@ -350,7 +350,6 @@
     
     // Konfigurierbare Chat-Parameter
     private int MaxSourcesForAnswer => Configuration.GetValue<int>("ChatService:MaxSourcesForAnswer", 5);
-    private double MinScoreForAnswer => Configuration.GetValue<double>("ChatService:MinScoreForAnswer", 0.3);
     private int MaxContextLength => Configuration.GetValue<int>("ChatService:MaxContextLength", 12000);
     
     // Chatverlauf-Konfiguration
@@ -549,7 +548,6 @@
                     Content = response.GeneratedAnswer ?? "Keine Antwort generiert.",
                     Timestamp = DateTime.Now,
                     Results = response.Results?
-                        .Where(r => r.Score >= MinScoreForAnswer) // Filter basierend auf MinScore
                         .Select(r => new SearchResult
                         {
                             Content = r.Content,
