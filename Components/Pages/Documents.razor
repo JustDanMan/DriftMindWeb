@@ -168,7 +168,9 @@
                                 </div>
                                 <div class="col-4">
                                     <div class="stat-item">
-                                        <div class="stat-value">@document.FileType</div>
+                                        <div class="stat-value">
+                                            <i class="bi @GetFileIcon(document.FileType)" style="font-size: 1.5rem;"></i>
+                                        </div>
                                         <div class="stat-label">Typ</div>
                                     </div>
                                 </div>
@@ -422,13 +424,47 @@
 
     private string GetFileIcon(string? fileType)
     {
-        return fileType?.ToLowerInvariant() switch
+        if (string.IsNullOrEmpty(fileType))
+            return "bi-file-earmark";
+
+        var type = fileType.ToLowerInvariant();
+
+        // Check by file extension first
+        if (type.StartsWith('.'))
         {
-            ".pdf" => "bi-file-earmark-pdf",
-            ".docx" => "bi-file-earmark-word",
-            ".txt" => "bi-file-earmark-text",
-            ".md" => "bi-file-earmark-code",
-            _ => "bi-file-earmark"
+            return type switch
+            {
+                ".pdf" => "bi-file-earmark-pdf text-danger",
+                ".docx" or ".doc" => "bi-file-earmark-word text-primary",
+                ".xlsx" or ".xls" => "bi-file-earmark-excel text-success",
+                ".pptx" or ".ppt" => "bi-file-earmark-ppt text-warning",
+                ".txt" => "bi-file-earmark-text text-secondary",
+                ".md" => "bi-file-earmark-code text-info",
+                ".zip" or ".rar" or ".7z" => "bi-file-earmark-zip text-warning",
+                ".jpg" or ".jpeg" or ".png" or ".gif" or ".bmp" => "bi-file-earmark-image text-success",
+                ".mp4" or ".avi" or ".mov" or ".wmv" => "bi-file-earmark-play text-danger",
+                ".mp3" or ".wav" or ".flac" => "bi-file-earmark-music text-primary",
+                _ => "bi-file-earmark text-muted"
+            };
+        }
+
+        // Check by MIME type
+        return type switch
+        {
+            "application/pdf" => "bi-file-earmark-pdf text-danger",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" or 
+            "application/msword" => "bi-file-earmark-word text-primary",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" or 
+            "application/vnd.ms-excel" => "bi-file-earmark-excel text-success",
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation" or 
+            "application/vnd.ms-powerpoint" => "bi-file-earmark-ppt text-warning",
+            "text/plain" => "bi-file-earmark-text text-secondary",
+            "text/markdown" => "bi-file-earmark-code text-info",
+            "application/zip" or "application/x-rar-compressed" => "bi-file-earmark-zip text-warning",
+            "image/jpeg" or "image/png" or "image/gif" or "image/bmp" => "bi-file-earmark-image text-success",
+            "video/mp4" or "video/avi" => "bi-file-earmark-play text-danger",
+            "audio/mpeg" or "audio/wav" => "bi-file-earmark-music text-primary",
+            _ => "bi-file-earmark text-muted"
         };
     }
 
