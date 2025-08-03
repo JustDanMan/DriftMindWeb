@@ -1,0 +1,36 @@
+# CODEOWNERS file for DriftMindWeb
+# This file defines who is automatically assigned as a reviewer for different parts of the codebase.
+# More info: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Global owner - fallback for everything not specifically covered
+* @JustDanMan
+
+# Core application configuration
+appsettings*.json @JustDanMan
+*.csproj @JustDanMan
+*.sln @JustDanMan
+Program.cs @JustDanMan
+Dockerfile @JustDanMan
+
+# Blazor Components and UI
+/Components/ @JustDanMan
+/wwwroot/ @JustDanMan
+*.razor @JustDanMan
+*.razor.css @JustDanMan
+
+# Services and API integration
+/Services/ @JustDanMan
+/Controllers/ @JustDanMan
+
+# CI/CD and Infrastructure
+/.github/ @JustDanMan
+.github/workflows/ @JustDanMan
+.github/dependabot.yml @JustDanMan
+
+# Documentation
+README*.md @JustDanMan
+*.md @JustDanMan
+
+# Configuration files that need careful review
+launchSettings.json @JustDanMan
+site.webmanifest @JustDanMan
