@@ -29,6 +29,21 @@
     margin-right: 0.5rem;
 }
 
+.chat-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.chat-controls .btn {
+    border-radius: 6px;
+}
+
+.chat-controls .text-muted {
+    font-size: 0.75rem;
+}
+
 /* Upload Section */
 .upload-section {
     background-color: #2a2a2a;
@@ -42,6 +57,23 @@
 
 .upload-section.expanded {
     padding: 1rem;
+}
+
+.upload-header {
+    width: 100%;
+}
+
+.upload-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* Wenn nur ein Button da ist, soll er links bleiben */
+.upload-buttons:has(button:only-child) {
+    justify-content: flex-start;
 }
 
 .upload-form {
@@ -649,4 +681,56 @@
 
 .modal-title {
     color: #ffffff;
+}
+
+/* Chat History Indicator */
+.chat-history-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    background-color: rgba(77, 184, 255, 0.1);
+    border: 1px solid rgba(77, 184, 255, 0.3);
+    border-radius: 6px 6px 0 0;
+    font-size: 0.8rem;
+    color: #4db8ff;
+}
+
+.history-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.history-main i {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.context-limit-info {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: #6c757d;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.context-limit-info i {
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+
+.chat-input:has(.chat-history-indicator) .input-group {
+    border-radius: 0 0 6px 6px;
+}
+
+.chat-input:has(.chat-history-indicator) .input-group .form-control {
+    border-top: none;
+    border-radius: 0 0 0 6px;
+}
+
+.chat-input:has(.chat-history-indicator) .input-group .btn {
+    border-top: none;
+    border-radius: 0 0 6px 0;
 }

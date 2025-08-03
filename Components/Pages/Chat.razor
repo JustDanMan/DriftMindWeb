@@ -20,10 +20,21 @@
 
     <!-- Upload Section -->
     <div class="upload-section @(showUpload ? "expanded" : "collapsed")">
-        <button class="btn btn-outline-primary mb-3" @onclick="ToggleUpload">
-            <i class="bi bi-cloud-upload"></i>
-            @(showUpload ? "Upload verbergen" : "Dokument hochladen")
-        </button>
+        <div class="upload-header">
+            <div class="upload-buttons">
+                <button class="btn btn-outline-primary mb-3" @onclick="ToggleUpload">
+                    <i class="bi bi-cloud-upload"></i>
+                    @(showUpload ? "Upload verbergen" : "Dokument hochladen")
+                </button>
+                @if (ChatHistoryEnabled && HasChatHistory())
+                {
+                    <button class="btn btn-outline-primary mb-3" @onclick="ClearChatHistory" title="Chat-Verlauf löschen">
+                        <i class="bi bi-trash3"></i>
+                        @GetNewChatButtonText()
+                    </button>
+                }
+            </div>
+        </div>
         
         @if (showUpload)
         {
@@ -244,6 +255,22 @@
 
     <!-- Chat Input -->
     <div class="chat-input">
+        @if (ChatHistoryEnabled && HasChatHistory())
+        {
+            <div class="chat-history-indicator">
+                <div class="history-main">
+                    <i class="bi bi-clock-history"></i>
+                    <span class="text-muted">@GetChatHistoryIndicator()</span>
+                </div>
+                @if (GetUserMessagesCount() > MaxChatHistoryMessages * 2)
+                {
+                    <div class="context-limit-info">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Nur die letzten @MaxChatHistoryMessages Nachrichten-Paare werden als Kontext verwendet</span>
+                    </div>
+                }
+            </div>
+        }
         <div class="input-group">
             <input @bind="currentMessage" @onkeypress="HandleKeyPress" type="text" class="form-control" 
                    placeholder="Stellen Sie eine Frage zu Ihren Dokumenten..." disabled="@isSearching">
@@ -325,6 +352,11 @@
     private int MaxSourcesForAnswer => Configuration.GetValue<int>("ChatService:MaxSourcesForAnswer", 5);
     private double MinScoreForAnswer => Configuration.GetValue<double>("ChatService:MinScoreForAnswer", 0.3);
     private int MaxContextLength => Configuration.GetValue<int>("ChatService:MaxContextLength", 12000);
+    
+    // Chatverlauf-Konfiguration
+    private bool ChatHistoryEnabled => Configuration.GetValue<bool>("ChatService:ChatHistoryEnabled", true);
+    private int MaxChatHistoryMessages => Configuration.GetValue<int>("ChatService:MaxChatHistoryMessages", 5);
+    private int ChatHistoryContextPercentage => Configuration.GetValue<int>("ChatService:ChatHistoryContextPercentage", 30);
     
     // Konfigurierbarer Upload-Limit
     private int MaxUploadSizeMB => Configuration.GetValue<int>("DriftMindApi:MaxUploadSizeMB", 3);
@@ -503,7 +535,8 @@
                 Query = userMessage,
                 MaxResults = MaxSourcesForAnswer,
                 UseSemanticSearch = true,
-                IncludeAnswer = true
+                IncludeAnswer = true,
+                ChatHistory = ChatHistoryEnabled ? BuildChatHistory() : null
             };
             
             var response = await ApiService.SearchAsync(searchRequest);
@@ -575,6 +608,127 @@
     {
         await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("scrollToBottom", chatContainer);
+    }
+
+    private List<DriftMindWeb.Services.ChatMessage>? BuildChatHistory()
+    {
+        if (!ChatHistoryEnabled || messages.Count <= 1) // Erste Begrüßungsnachricht nicht mitzählen
+            return null;
+
+        // Hole die letzten Nachrichten (exklusive der ersten Begrüßungsnachricht)
+        var relevantMessages = messages
+            .Skip(1) // Überspringe die erste Begrüßungsnachricht
+            .Where(m => m.Type == "user" || m.Type == "assistant")
+            .OrderBy(m => m.Timestamp)
+            .TakeLast(MaxChatHistoryMessages * 2) // User + Assistant Paare
+            .ToList();
+
+        if (!relevantMessages.Any())
+            return null;
+
+        // Konvertiere zu ChatMessage (API-Format)
+        var chatHistory = relevantMessages.Select(m => new DriftMindWeb.Services.ChatMessage
+        {
+            Role = m.Type,
+            Content = TruncateForChatHistory(m.Content),
+            Timestamp = m.Timestamp
+        }).ToList();
+
+        return chatHistory;
+    }
+
+    private string TruncateForChatHistory(string content)
+    {
+        // Berechne die maximale Länge pro Nachricht basierend auf dem Kontextprozentsatz
+        var chatHistoryContextLength = (int)(MaxContextLength * (ChatHistoryContextPercentage / 100.0));
+        var maxLengthPerMessage = Math.Max(100, chatHistoryContextLength / Math.Max(1, MaxChatHistoryMessages * 2));
+
+        if (content.Length <= maxLengthPerMessage)
+            return content;
+
+        return content.Substring(0, maxLengthPerMessage) + "...";
+    }
+
+    private bool HasChatHistory()
+    {
+        return messages.Count > 1; // Mehr als nur die Begrüßungsnachricht
+    }
+
+    private int GetChatHistoryCount()
+    {
+        return Math.Max(0, messages.Count - 1); // Begrüßungsnachricht nicht mitzählen
+    }
+
+    private int GetUserMessagesCount()
+    {
+        return messages.Where(m => m.Type == "user" || m.Type == "assistant").Count() - 1; // Ohne Begrüßung
+    }
+
+    private string GetChatHistoryIndicator()
+    {
+        if (!ChatHistoryEnabled || !HasChatHistory())
+            return "";
+
+        var totalMessages = GetUserMessagesCount();
+        var contextMessages = Math.Min(totalMessages, MaxChatHistoryMessages * 2); // User+Assistant Paare
+
+        if (totalMessages <= MaxChatHistoryMessages * 2)
+        {
+            return $"Mit Chatverlauf ({totalMessages} Nachrichten)";
+        }
+        else
+        {
+            return $"Mit Chatverlauf ({contextMessages} von {totalMessages} Nachrichten im Kontext)";
+        }
+    }
+
+    private string GetNewChatButtonText()
+    {
+        if (!HasChatHistory())
+            return "Neuer Chat";
+
+        var totalMessages = GetUserMessagesCount();
+
+        if (!ChatHistoryEnabled)
+        {
+            return $"Neuer Chat ({totalMessages} Nachrichten)";
+        }
+
+        var contextMessages = Math.Min(totalMessages, MaxChatHistoryMessages * 2);
+
+        if (totalMessages <= MaxChatHistoryMessages * 2)
+        {
+            return $"Neuer Chat ({totalMessages} im Verlauf)";
+        }
+        else
+        {
+            return $"Neuer Chat ({contextMessages}/{totalMessages} im Kontext)";
+        }
+    }
+
+    private async Task ClearChatHistory()
+    {
+        // Behalte nur die erste Begrüßungsnachricht
+        var welcomeMessage = messages.FirstOrDefault();
+        messages.Clear();
+        
+        if (welcomeMessage != null)
+        {
+            messages.Add(welcomeMessage);
+        }
+        else
+        {
+            // Fallback: Erstelle eine neue Begrüßungsnachricht
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+                Timestamp = DateTime.Now
+            });
+        }
+        
+        StateHasChanged();
+        await ScrollToBottom();
     }
 
     private string FormatFileSize(long bytes)

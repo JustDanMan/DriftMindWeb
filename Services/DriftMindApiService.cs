@@ -102,6 +102,21 @@ namespace DriftMindWeb.Services
                 var endpoint = _configuration["DriftMindApi:Endpoints:Search"] ?? "/search";
                 var url = $"{_baseUrl}{endpoint}";
                 
+                // Debug-Logging für ChatHistory
+                if (request.ChatHistory?.Count > 0)
+                {
+                    _logger.LogInformation("Sending chat history with {Count} messages to API", request.ChatHistory.Count);
+                    foreach (var item in request.ChatHistory)
+                    {
+                        _logger.LogInformation("ChatHistory: {Role} - {Content}", item.Role, 
+                            item.Content.Length > 100 ? item.Content.Substring(0, 100) + "..." : item.Content);
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation("No chat history being sent to API");
+                }
+                
                 var response = await _httpClient.PostAsJsonAsync(url, request);
                 
                 if (response.IsSuccessStatusCode)
@@ -296,6 +311,14 @@ namespace DriftMindWeb.Services
         public bool UseSemanticSearch { get; set; } = true;
         public string? DocumentId { get; set; }
         public bool IncludeAnswer { get; set; } = true;
+        public List<ChatMessage>? ChatHistory { get; set; }
+    }
+
+    public class ChatMessage
+    {
+        public string Role { get; set; } = ""; // "user" oder "assistant"
+        public string Content { get; set; } = "";
+        public DateTime Timestamp { get; set; }
     }
 
     public class SearchResponse
