@@ -831,7 +831,7 @@
                 messages.Add(new ChatMessage
                 {
                     Type = "assistant",
-                    Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Dateigröße: {FormatFileSize(response.FileSizeInBytes)}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
+                    Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Dateigröße: {FormatFileSize(response.FileSizeBytes)}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
                     Timestamp = DateTime.Now
                 });
                 return true;

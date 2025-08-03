@@ -301,7 +301,7 @@ namespace DriftMindWeb.Services
         public string Message { get; set; } = "";
         public string FileName { get; set; } = "";
         public string FileType { get; set; } = "";
-        public long FileSizeInBytes { get; set; }
+        public long FileSizeBytes { get; set; }
     }
 
     public class SearchRequest
@@ -340,6 +340,8 @@ namespace DriftMindWeb.Services
         public string? Metadata { get; set; }
         public DateTime CreatedAt { get; set; }
         public string? OriginalFileName { get; set; }
+        public string? ContentType { get; set; }
+        public long? FileSizeBytes { get; set; }
         public bool IsFileAvailable { get; set; }
     }
 
@@ -395,7 +397,7 @@ namespace DriftMindWeb.Services
         public int ChunkCount { get; set; }
         public string? FileName { get; set; }
         public string? FileType { get; set; }
-        public long? FileSizeInBytes { get; set; }
+        public long? FileSizeBytes { get; set; }
         public string? Metadata { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdated { get; set; }
