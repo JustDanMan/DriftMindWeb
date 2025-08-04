@@ -284,10 +284,47 @@ namespace DriftMindWeb.Services
 
         private string? GetFileNameFromResponse(HttpResponseMessage response)
         {
-            if (response.Content.Headers.ContentDisposition?.FileName != null)
+            var contentDisposition = response.Content.Headers.ContentDisposition;
+            
+            // Debug: Logge alle Content-Disposition Informationen
+            var contentDispHeader = response.Content.Headers.Contains("Content-Disposition") 
+                ? string.Join("; ", response.Content.Headers.GetValues("Content-Disposition"))
+                : "No Content-Disposition header found";
+                
+            _logger.LogInformation("Content-Disposition Debug - FileName: '{FileName}', FileNameStar: '{FileNameStar}', Full Header: '{Header}'", 
+                contentDisposition?.FileName ?? "null", 
+                contentDisposition?.FileNameStar ?? "null",
+                contentDispHeader);
+            
+            // Bevorzuge FileNameStar (RFC 6266) für UTF-8 kodierte Namen, da diese meist korrekt sind
+            if (!string.IsNullOrEmpty(contentDisposition?.FileNameStar))
             {
-                return response.Content.Headers.ContentDisposition.FileName.Trim('"');
+                _logger.LogInformation("Using FileNameStar: '{FileNameStar}'", contentDisposition.FileNameStar);
+                return contentDisposition.FileNameStar;
             }
+            
+            // Fallback auf FileName falls FileNameStar nicht verfügbar ist
+            if (contentDisposition?.FileName != null)
+            {
+                var fileName = contentDisposition.FileName.Trim('"');
+                _logger.LogInformation("Original FileName from header: '{OriginalFileName}'", fileName);
+                
+                // Versuche URL-Dekodierung falls der Dateiname kodiert ist
+                try
+                {
+                    var decodedFileName = Uri.UnescapeDataString(fileName);
+                    _logger.LogInformation("Decoded FileName: '{DecodedFileName}'", decodedFileName);
+                    fileName = decodedFileName;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to decode filename, using original: '{FileName}'", fileName);
+                }
+                
+                return fileName;
+            }
+            
+            _logger.LogWarning("No filename found in Content-Disposition header");
             return null;
         }
     }

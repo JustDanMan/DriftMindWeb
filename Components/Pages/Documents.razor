@@ -389,19 +389,20 @@
         if (string.IsNullOrEmpty(documentToDelete))
             return;
 
-        isDeleting.Add(documentToDelete);
+        var documentIdToDelete = documentToDelete; // Store the ID before it gets reset
+        isDeleting.Add(documentIdToDelete);
         StateHasChanged();
 
         try
         {
-            var success = await ApiService.DeleteDocumentAsync(documentToDelete);
+            var success = await ApiService.DeleteDocumentAsync(documentIdToDelete);
             
             if (success)
             {
                 // Remove from local list
                 if (documents != null)
                 {
-                    documents.RemoveAll(d => d.DocumentId == documentToDelete);
+                    documents.RemoveAll(d => d.DocumentId == documentIdToDelete);
                     totalDocuments--;
                 }
                 documentToDelete = null;
@@ -420,7 +421,7 @@
         }
         finally
         {
-            isDeleting.Remove(documentToDelete ?? "");
+            isDeleting.Remove(documentIdToDelete); // Use the stored ID instead of the reset documentToDelete
             documentToDelete = null;
             StateHasChanged();
         }

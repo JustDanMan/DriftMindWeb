@@ -84,11 +84,30 @@ namespace DriftMindWeb.Controllers
                 {
                     _logger.LogInformation("File downloaded successfully: {FileName}", downloadResponse.FileName);
                     
-                    return File(
-                        downloadResponse.FileBytes,
-                        downloadResponse.ContentType,
-                        downloadResponse.FileName
-                    );
+                    // Setze Content-Type Header
+                    Response.ContentType = downloadResponse.ContentType ?? "application/octet-stream";
+                    
+                    // Setze den Content-Disposition Header mit UTF-8 Encoding für korrekte Umlaute
+                    if (!string.IsNullOrEmpty(downloadResponse.FileName))
+                    {
+                        // RFC 6266 konforme Encoding für Dateinamen mit Umlauten
+                        // Erstelle ASCII-Version als Fallback für ältere Browser
+                        var asciiFileName = downloadResponse.FileName
+                            .Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue")
+                            .Replace("Ä", "Ae").Replace("Ö", "Oe").Replace("Ü", "Ue")
+                            .Replace("ß", "ss");
+                        
+                        // Setze beide Header-Varianten für maximale Kompatibilität
+                        Response.Headers["Content-Disposition"] = 
+                            $"attachment; filename=\"{asciiFileName}\"; filename*=UTF-8''{Uri.EscapeDataString(downloadResponse.FileName)}";
+                    }
+                    else
+                    {
+                        Response.Headers["Content-Disposition"] = "attachment";
+                    }
+                    
+                    // Rückgabe der Datei-Bytes direkt
+                    return File(downloadResponse.FileBytes, Response.ContentType);
                 }
                 else
                 {
@@ -116,7 +135,50 @@ namespace DriftMindWeb.Controllers
                 return BadRequest("Token ist erforderlich");
             }
 
-            return await DownloadFile(new DownloadFileRequest { Token = token });
+            try
+            {
+                var downloadResponse = await _apiService.DownloadFileAsync(token);
+
+                if (downloadResponse?.Success == true)
+                {
+                    _logger.LogInformation("File downloaded successfully via GET: {FileName}", downloadResponse.FileName);
+                    
+                    // Setze Content-Type Header
+                    Response.ContentType = downloadResponse.ContentType ?? "application/octet-stream";
+                    
+                    // Setze den Content-Disposition Header mit UTF-8 Encoding für korrekte Umlaute
+                    if (!string.IsNullOrEmpty(downloadResponse.FileName))
+                    {
+                        // RFC 6266 konforme Encoding für Dateinamen mit Umlauten
+                        // Erstelle ASCII-Version als Fallback für ältere Browser
+                        var asciiFileName = downloadResponse.FileName
+                            .Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue")
+                            .Replace("Ä", "Ae").Replace("Ö", "Oe").Replace("Ü", "Ue")
+                            .Replace("ß", "ss");
+                        
+                        // Setze beide Header-Varianten für maximale Kompatibilität
+                        Response.Headers["Content-Disposition"] = 
+                            $"attachment; filename=\"{asciiFileName}\"; filename*=UTF-8''{Uri.EscapeDataString(downloadResponse.FileName)}";
+                    }
+                    else
+                    {
+                        Response.Headers["Content-Disposition"] = "attachment";
+                    }
+                    
+                    // Rückgabe der Datei-Bytes direkt
+                    return File(downloadResponse.FileBytes, Response.ContentType);
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to download file with provided token via GET");
+                    return BadRequest(new { success = false, message = "Download fehlgeschlagen - Token ungültig oder abgelaufen" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading file via GET");
+                return StatusCode(500, new { success = false, message = "Interner Server-Fehler beim Download" });
+            }
         }
     }
 
