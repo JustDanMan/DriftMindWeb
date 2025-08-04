@@ -107,13 +107,111 @@
     .navbar-toggler {
         display: none;
     }
+}
 
+/* Navigation Logo */
+.nav-brand-image {
+    position: absolute;
+    bottom: 4rem;
+    left: 1rem;
+    right: 1rem;
+    padding: 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.nav-logo {
+    max-width: 160px;
+    width: 100%;
+    height: auto;
+    opacity: 0.9;
+    filter: drop-shadow(0 4px 8px rgba(96, 165, 250, 0.15));
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.nav-logo:hover {
+    opacity: 1;
+    transform: scale(1.05);
+    filter: drop-shadow(0 6px 12px rgba(96, 165, 250, 0.25));
+}
+
+/* Powered by ViganoLabs */
+.nav-powered-by {
+    position: absolute;
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    text-align: center;
+    padding: 0 1rem;
+    z-index: 100;
+}
+
+.powered-text {
+    color: #94a3b8;
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 500;
+}
+
+.viganolabs-logo {
+    max-width: 120px;
+    width: 100%;
+    height: auto;
+    opacity: 0.7;
+    filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.1));
+    transition: all 0.3s ease;
+    border-radius: 6px;
+}
+
+.viganolabs-logo:hover {
+    opacity: 0.9;
+    transform: scale(1.03);
+    filter: drop-shadow(0 4px 8px rgba(96, 165, 250, 0.2));
+}
+
+/* Make nav-scrollable relative for absolute positioning */
+.nav-scrollable {
+    position: relative;
+}
+
+@media (max-width: 640px) {
+    .nav-brand-image {
+        bottom: 3rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .nav-logo {
+        max-width: 120px;
+    }
+    
+    .nav-powered-by {
+        bottom: 0.5rem;
+        left: 0.5rem;
+        right: 0.5rem;
+        padding: 0 0.5rem;
+    }
+    
+    .viganolabs-logo {
+        max-width: 100px;
+    }
+}
+
+/* Adjust nav-scrollable to make room for absolute logo */
+@media (min-width: 641px) {
     .nav-scrollable {
         /* Never collapse the sidebar for wide screens */
         display: block;
 
-        /* Allow sidebar to scroll for tall menus */
+        /* Allow sidebar to scroll for tall menus - make room for absolute logo */
         height: calc(100vh - 3.5rem);
         overflow-y: auto;
+        padding-bottom: 180px; /* Space for both logos */
     }
 }
