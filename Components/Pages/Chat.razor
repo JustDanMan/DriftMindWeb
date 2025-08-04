@@ -146,7 +146,7 @@
     <div class="chat-messages" @ref="chatContainer">
         @foreach (var message in messages)
         {
-            <div class="message @message.Type">
+            <div class="message @message.Type" id="message-@message.Id">
                 <div class="message-content">
                     @if (message.Type == "user")
                     {
@@ -348,6 +348,9 @@
     // Cache für DocumentId -> FileName Mapping
     private Dictionary<string, string> documentNameCache = new();
     
+    // Scroll-Management
+    private int lastMessageCount = 0;
+    
     // Konfigurierbare Chat-Parameter
     private int MaxSourcesForAnswer => Configuration.GetValue<int>("ChatService:MaxSourcesForAnswer", 5);
     private int MaxContextLength => Configuration.GetValue<int>("ChatService:MaxContextLength", 12000);
@@ -369,6 +372,8 @@
             Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
             Timestamp = DateTime.Now
         });
+        
+        lastMessageCount = messages.Count;
     }
 
     private void ToggleUpload()
@@ -398,7 +403,7 @@
             });
             selectedFile = null;
             StateHasChanged();
-            await ScrollToBottom();
+            await ScrollToNewMessage();
             return;
         }
 
@@ -416,7 +421,7 @@
             });
             selectedFile = null;
             StateHasChanged();
-            await ScrollToBottom();
+            await ScrollToNewMessage();
             return;
         }
 
@@ -488,7 +493,7 @@
         {
             isUploading = false;
             StateHasChanged();
-            await ScrollToBottom();
+            await ScrollToNewMessage();
         }
     }
 
@@ -525,7 +530,7 @@
         
         isSearching = true;
         StateHasChanged();
-        await ScrollToBottom();
+        await ScrollToBottom(); // Für User-Nachrichten bleibt ScrollToBottom
         
         try
         {
@@ -598,7 +603,7 @@
         {
             isSearching = false;
             StateHasChanged();
-            await ScrollToBottom();
+            await ScrollToNewMessage(); // Für Assistant-Antworten zum Anfang der neuen Nachricht scrollen
         }
     }
 
@@ -606,6 +611,38 @@
     {
         await Task.Delay(100);
         await JSRuntime.InvokeVoidAsync("scrollToBottom", chatContainer);
+    }
+    
+    private async Task ScrollToNewMessage()
+    {
+        // Prüfe, ob eine neue Assistant-Nachricht hinzugefügt wurde
+        if (messages.Count > lastMessageCount && messages.LastOrDefault()?.Type == "assistant")
+        {
+            await Task.Delay(150); // Kurz warten, damit das DOM aktualisiert wird
+            
+            var lastMessage = messages.LastOrDefault();
+            if (lastMessage != null)
+            {
+                try
+                {
+                    // Erstelle eine eindeutige ID für die letzte Nachricht
+                    var messageId = $"message-{lastMessage.Id}";
+                    await JSRuntime.InvokeVoidAsync("scrollToMessage", messageId);
+                }
+                catch
+                {
+                    // Fallback: Normale Scroll-Funktion falls JavaScript fehlschlägt
+                    await ScrollToBottom();
+                }
+            }
+        }
+        else
+        {
+            // Für User-Nachrichten oder andere Fälle: normal nach unten scrollen
+            await ScrollToBottom();
+        }
+        
+        lastMessageCount = messages.Count;
     }
 
     private List<DriftMindWeb.Services.ChatMessage>? BuildChatHistory()
@@ -726,7 +763,7 @@
         }
         
         StateHasChanged();
-        await ScrollToBottom();
+        await ScrollToNewMessage();
     }
 
     private string FormatFileSize(long bytes)
@@ -878,7 +915,7 @@
             if (uploadSuccess)
             {
                 ResetUploadForm();
-                await ScrollToBottom();
+                await ScrollToNewMessage();
             }
         }
         finally

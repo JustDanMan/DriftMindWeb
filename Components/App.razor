@@ -36,6 +36,18 @@
                 element.scrollTop = element.scrollHeight;
             }
         };
+        
+        window.scrollToMessage = (messageId) => {
+            const messageElement = document.getElementById(messageId);
+            if (messageElement) {
+                // Scrolle zum Anfang der Nachricht mit einem sanften Übergang
+                messageElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start',
+                    inline: 'nearest'
+                });
+            }
+        };
     </script>
 </body>
 
