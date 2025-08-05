@@ -366,14 +366,26 @@
 
     protected override void OnInitialized()
     {
-        messages.Add(new ChatMessage
-        {
-            Type = "assistant",
-            Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-            Timestamp = DateTime.Now
-        });
-        
+        // Messages-Liste bleibt erstmal leer, um das Flackern zu vermeiden
         lastMessageCount = messages.Count;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Füge die Willkommensnachricht erst hinzu, wenn die Komponente vollständig geladen ist
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant",
+                Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+                Timestamp = DateTime.Now
+            });
+            
+            lastMessageCount = messages.Count;
+            StateHasChanged(); // UI aktualisieren
+            await ScrollToNewMessage(); // Zur Nachricht scrollen
+        }
     }
 
     private void ToggleUpload()
