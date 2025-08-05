@@ -1,5 +1,7 @@
 using DriftMindWeb.Components;
 using DriftMindWeb.Services;
+using Azure.Storage.Blobs;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +37,45 @@ else
     {
         options.DetailedErrors = builder.Environment.IsDevelopment();
     });
+}
+
+// Configure Shared Data Protection for Azure Blob Storage if enabled
+var sharedDataProtectionEnabled = builder.Configuration.GetValue<bool>("SharedDataProtection:Enabled");
+var sharedDataProtectionConnectionString = builder.Configuration["SharedDataProtection:AzureStorage:ConnectionString"];
+var sharedDataProtectionContainerName = builder.Configuration["SharedDataProtection:AzureStorage:ContainerName"];
+var sharedDataProtectionBlobName = builder.Configuration["SharedDataProtection:AzureStorage:BlobName"];
+var sharedDataProtectionApplicationName = builder.Configuration["SharedDataProtection:ApplicationName"];
+
+if (sharedDataProtectionEnabled && !string.IsNullOrEmpty(sharedDataProtectionConnectionString))
+{
+    try
+    {
+        // Configure Data Protection with Azure Blob Storage
+        builder.Services.AddDataProtection()
+            .SetApplicationName(sharedDataProtectionApplicationName ?? "DriftMindWeb")
+            .PersistKeysToAzureBlobStorage(sharedDataProtectionConnectionString, sharedDataProtectionContainerName, sharedDataProtectionBlobName ?? "keys.xml");
+            
+        Console.WriteLine($"Shared Data Protection configured with Azure Blob Storage. Container: {sharedDataProtectionContainerName}, Blob: {sharedDataProtectionBlobName}");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Failed to configure Shared Data Protection with Azure Blob Storage: {ex.Message}. Falling back to default configuration.");
+        
+        // Fall back to default data protection
+        builder.Services.AddDataProtection()
+            .SetApplicationName(sharedDataProtectionApplicationName ?? "DriftMindWeb");
+    }
+}
+else
+{
+    // Use default data protection (local file system)
+    builder.Services.AddDataProtection()
+        .SetApplicationName(sharedDataProtectionApplicationName ?? "DriftMindWeb");
+        
+    if (sharedDataProtectionEnabled)
+    {
+        Console.WriteLine("Shared Data Protection is enabled but Azure Storage connection string is missing. Using default configuration.");
+    }
 }
 
 // Configure form options for file uploads
