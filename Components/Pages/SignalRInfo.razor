@@ -1,0 +1,270 @@
+@page "/signalr-info"
+@using DriftMindWeb.Services
+@inject ISignalRService SignalRService
+@rendermode InteractiveServer
+
+<PageTitle>SignalR Konfiguration - DriftMind</PageTitle>
+
+<div class="container-fluid signalr-info-container">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h2>
+                    <i class="bi bi-broadcast"></i>
+                    SignalR Konfiguration
+                </h2>
+                <p class="text-muted">Übersicht über die aktuelle SignalR-Konfiguration und Skalierungsoptionen</p>
+            </div>
+
+            @{
+                var signalRInfo = SignalRService.GetSignalRInfo();
+            }
+
+            <div class="row equal-height-row">
+                <div class="col-md-8">
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h4>Aktueller Modus</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="mode-display">
+                                @if (signalRInfo.IsAzureEnabled)
+                                {
+                                    <div class="mode-badge azure-mode">
+                                        <i class="bi bi-cloud-check"></i>
+                                        Azure SignalR Service
+                                    </div>
+                                    <p class="mode-description">
+                                        Ihre Anwendung verwendet Azure SignalR Service und ist für horizontale Skalierung konfiguriert.
+                                        Dies ermöglicht es, mehrere Server-Instanzen zu betreiben und eine hohe Verfügbarkeit zu gewährleisten.
+                                    </p>
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle text-success"></i>
+                                            Horizontale Skalierung möglich
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle text-success"></i>
+                                            Hochverfügbarkeit mit automatischem Failover
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle text-success"></i>
+                                            Optimiert für hohe Durchsätze
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle text-success"></i>
+                                            Anwendung: @signalRInfo.ApplicationName
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="mode-badge local-mode">
+                                        <i class="bi bi-pc-display"></i>
+                                        Lokale SignalR
+                                    </div>
+                                    <p class="mode-description">
+                                        Ihre Anwendung verwendet lokale SignalR (In-Memory). Dies ist ideal für Entwicklung und 
+                                        Single-Instance-Deployments, aber nicht für horizontale Skalierung geeignet.
+                                    </p>
+                                    <div class="feature-list">
+                                        <div class="feature-item">
+                                            <i class="bi bi-info-circle text-info"></i>
+                                            Perfekt für Entwicklung und Tests
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-info-circle text-info"></i>
+                                            Keine zusätzlichen Kosten
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                                            Begrenzt auf eine Server-Instanz
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-exclamation-triangle text-warning"></i>
+                                            Nicht skalierbar für Produktionsumgebungen
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h5>Schnell-Setup</h5>
+                        </div>
+                        <div class="card-body">
+                            @if (!signalRInfo.IsAzureEnabled)
+                            {
+                                <div class="setup-guide">
+                                    <h6>Azure SignalR aktivieren:</h6>
+                                    <ol class="setup-steps">
+                                        <li>Azure SignalR Service erstellen</li>
+                                        <li>Connection String kopieren</li>
+                                        <li>In appsettings.json konfigurieren:</li>
+                                    </ol>
+                                    <div class="code-block">
+                                        <pre><code>{
+  "AzureSignalR": {
+    "Enabled": true,
+    "ConnectionString": "Endpoint=https://..."
+  }
+}</code></pre>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="azure-info">
+                                    <h6>Azure SignalR aktiv</h6>
+                                    <p class="text-success">
+                                        <i class="bi bi-check-circle"></i>
+                                        Ihre Anwendung ist erfolgreich mit Azure SignalR verbunden.
+                                    </p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .signalr-info-container .page-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #374151;
+    }
+
+    .signalr-info-container .page-header h2 {
+        color: #e2e8f0;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Equal height columns */
+    .equal-height-row {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .equal-height-row > [class*="col-"] {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .signalr-info-container .info-card {
+        background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        border: 1px solid #374151;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .signalr-info-container .info-card .card-header {
+        background: rgba(59, 130, 246, 0.1);
+        border-bottom: 1px solid #374151;
+        padding: 1rem 1.5rem;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .signalr-info-container .info-card .card-header h4,
+    .signalr-info-container .info-card .card-header h5 {
+        color: #e2e8f0;
+        margin: 0;
+        font-weight: 600;
+    }
+
+    .signalr-info-container .info-card .card-body {
+        padding: 1.5rem;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .signalr-info-container .mode-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .signalr-info-container .mode-badge.azure-mode {
+        background: rgba(34, 197, 94, 0.2);
+        color: #22c55e;
+        border: 2px solid rgba(34, 197, 94, 0.3);
+    }
+
+    .signalr-info-container .mode-badge.local-mode {
+        background: rgba(251, 191, 36, 0.2);
+        color: #fbbf24;
+        border: 2px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .signalr-info-container .mode-description {
+        color: #cbd5e1;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feature-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        color: #e2e8f0;
+    }
+
+    .setup-steps {
+        color: #cbd5e1;
+        margin-bottom: 1rem;
+    }
+
+    .setup-steps li {
+        margin-bottom: 0.5rem;
+    }
+
+    .code-block {
+        background: #0f172a;
+        border: 1px solid #374151;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .code-block pre {
+        margin: 0;
+        color: #e2e8f0;
+        font-size: 0.85rem;
+        line-height: 1.4;
+    }
+
+    .azure-info {
+        text-align: center;
+    }
+
+    /* Specific icons within this component only - avoid global override */
+    .info-card .bi {
+        font-size: 0.9rem;
+    }
+    
+    .mode-badge .bi {
+        font-size: 1rem;
+    }
+</style>

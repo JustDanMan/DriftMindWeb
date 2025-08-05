@@ -1,11 +1,43 @@
 using DriftMindWeb.Components;
 using DriftMindWeb.Services;
+using DriftMindWeb.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Azure SignalR if enabled
+var azureSignalROptions = builder.Configuration.GetSection(AzureSignalROptions.SectionName).Get<AzureSignalROptions>() ?? new AzureSignalROptions();
+
+// Configure options
+builder.Services.Configure<AzureSignalROptions>(builder.Configuration.GetSection(AzureSignalROptions.SectionName));
+
 // Add services to the container.
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+if (azureSignalROptions.IsValid)
+{
+    // Use Azure SignalR Service for scalability
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
+
+    builder.Services.AddSignalR()
+        .AddAzureSignalR(azureSignalROptions.ConnectionString);
+    
+    // Configure Circuit options for Azure SignalR
+    builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+    });
+}
+else
+{
+    // Use default SignalR (in-memory) for single instance
+    builder.Services.AddRazorComponents()
+        .AddInteractiveServerComponents();
+        
+    // Configure Circuit options for local SignalR
+    builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
+    {
+        options.DetailedErrors = builder.Environment.IsDevelopment();
+    });
+}
 
 // Configure form options for file uploads
 var maxUploadSizeMB = builder.Configuration.GetValue<int>("DriftMindApi:MaxUploadSizeMB", 3);
@@ -28,10 +60,17 @@ builder.Services.AddScoped<IDriftMindApiService, DriftMindApiService>();
 // Add Markdown Service
 builder.Services.AddScoped<IMarkdownService, MarkdownService>();
 
+// Add SignalR Service as Singleton (configuration doesn't change at runtime)
+builder.Services.AddSingleton<ISignalRService, SignalRService>();
+
 // Add Controllers for API endpoints
 builder.Services.AddControllers();
 
 var app = builder.Build();
+
+// Initialize SignalR Service to trigger logging at startup
+var signalRService = app.Services.GetRequiredService<ISignalRService>();
+var signalRInfo = signalRService.GetSignalRInfo(); // This will trigger the logging
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
