@@ -2,7 +2,8 @@
 @using DriftMindWeb.Services
 @inject IDriftMindApiService ApiService
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
+@inject IConfiguration Configuration
+@rendermode @(new InteractiveServerRenderMode(prerender: true))
 
 <PageTitle>Dokumentenverwaltung</PageTitle>
 
@@ -84,11 +85,56 @@
     <div class="documents-list">
         @if (isLoading && (documents == null || documents.Count == 0))
         {
-            <div class="loading-placeholder">
-                <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary mb-3" role="status"></div>
-                        <p class="text-muted">Dokumente werden geladen...</p>
+            <div class="loading-container">
+                <!-- Skeleton cards for better UX -->
+                <div class="skeleton-container w-100">
+                    <div class="skeleton-grid">
+                        @for (int i = 0; i < skeletonCardCount; i++)
+                        {
+                            <div class="skeleton-document-card">
+                                <!-- Document Header -->
+                                <div class="skeleton-document-header">
+                                    <div class="skeleton-document-info">
+                                        <div class="skeleton-line skeleton-title"></div>
+                                        <div class="skeleton-line skeleton-document-id"></div>
+                                    </div>
+                                    <div class="skeleton-document-actions">
+                                        <div class="skeleton-button"></div>
+                                        <div class="skeleton-button-small"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Document Stats -->
+                                <div class="skeleton-document-stats">
+                                    <div class="skeleton-stats-row">
+                                        <div class="skeleton-stat-item">
+                                            <div class="skeleton-stat-value"></div>
+                                            <div class="skeleton-stat-label"></div>
+                                        </div>
+                                        <div class="skeleton-stat-item">
+                                            <div class="skeleton-stat-value"></div>
+                                            <div class="skeleton-stat-label"></div>
+                                        </div>
+                                        <div class="skeleton-stat-item">
+                                            <div class="skeleton-stat-value"></div>
+                                            <div class="skeleton-stat-label"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Document Preview -->
+                                <div class="skeleton-document-preview">
+                                    <div class="skeleton-line skeleton-preview-title"></div>
+                                    <div class="skeleton-line"></div>
+                                    <div class="skeleton-line short"></div>
+                                </div>
+
+                                <!-- Document Footer -->
+                                <div class="skeleton-document-footer">
+                                    <div class="skeleton-line skeleton-date"></div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -305,11 +351,31 @@
     private HashSet<string> isDeleting = new();
     private string? documentToDelete;
 
+    // Configuration values
+    private int skeletonCardCount;
+    private int initialPageSize;
+
     private int totalPages => Math.Max(1, (int)Math.Ceiling((double)totalDocuments / maxResults));
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await LoadDocuments();
+        // Load configuration values
+        skeletonCardCount = Configuration.GetValue<int>("DocumentsPage:SkeletonCardCount", 3);
+        initialPageSize = Configuration.GetValue<int>("DocumentsPage:InitialPageSize", 50);
+        maxResults = initialPageSize;
+
+        // Initialize with loading state - page appears immediately
+        isLoading = true;
+        documents = new List<DocumentInfo>(); // Empty list to show loading UI
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Load data after first render for immediate UI feedback
+            await LoadDocuments();
+        }
     }
 
     private void ToggleFilter()

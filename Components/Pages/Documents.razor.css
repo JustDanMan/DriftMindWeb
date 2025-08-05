@@ -22,6 +22,196 @@
     font-size: 1.2em;
 }
 
+/* Loading and Skeleton UI */
+.loading-container {
+    min-height: 400px;
+}
+
+.skeleton-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Skeleton Grid - matches documents-grid */
+.skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* Skeleton Document Card - matches document-card */
+.skeleton-document-card {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 1.5rem;
+    animation: pulse 1.5s ease-in-out infinite;
+    position: relative;
+}
+
+/* Skeleton Document Header */
+.skeleton-document-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.skeleton-document-info {
+    flex: 1;
+}
+
+.skeleton-document-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-left: 1rem;
+}
+
+.skeleton-button {
+    width: 80px;
+    height: 32px;
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 6px;
+}
+
+.skeleton-button-small {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 6px;
+}
+
+/* Skeleton Document Stats */
+.skeleton-document-stats {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(108, 117, 125, 0.1);
+    border-radius: 8px;
+}
+
+.skeleton-stats-row {
+    display: flex;
+    justify-content: space-around;
+}
+
+.skeleton-stat-item {
+    text-align: center;
+    flex: 1;
+}
+
+.skeleton-stat-value {
+    width: 40px;
+    height: 20px;
+    margin: 0 auto 0.5rem;
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 4px;
+}
+
+.skeleton-stat-label {
+    width: 50px;
+    height: 12px;
+    margin: 0 auto;
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 4px;
+}
+
+/* Skeleton Document Preview */
+.skeleton-document-preview {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(108, 117, 125, 0.05);
+    border-radius: 8px;
+}
+
+.skeleton-preview-title {
+    width: 80px;
+    height: 16px;
+    margin-bottom: 0.75rem;
+}
+
+/* Skeleton Document Footer */
+.skeleton-document-footer {
+    border-top: 1px solid #444;
+    padding-top: 1rem;
+}
+
+.skeleton-date {
+    width: 180px;
+    height: 14px;
+}
+
+/* Base skeleton line styles */
+.skeleton-line {
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 4px;
+    height: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-title {
+    height: 1.5rem;
+    width: 70%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-document-id {
+    height: 1rem;
+    width: 50%;
+    opacity: 0.7;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+/* Legacy skeleton styles for backward compatibility */
+.skeleton-card {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-header {
+    margin-bottom: 1rem;
+}
+
+.skeleton-subtitle {
+    height: 1rem;
+    width: 50%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
 /* Control Panel */
 .control-panel {
     background-color: #2a2a2a;
