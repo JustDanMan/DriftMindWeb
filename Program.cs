@@ -1,24 +1,22 @@
 using DriftMindWeb.Components;
 using DriftMindWeb.Services;
-using DriftMindWeb.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Azure SignalR if enabled
-var azureSignalROptions = builder.Configuration.GetSection(AzureSignalROptions.SectionName).Get<AzureSignalROptions>() ?? new AzureSignalROptions();
-
-// Configure options
-builder.Services.Configure<AzureSignalROptions>(builder.Configuration.GetSection(AzureSignalROptions.SectionName));
+var azureEnabled = builder.Configuration.GetValue<bool>("AzureSignalR:Enabled");
+var connectionString = builder.Configuration["AzureSignalR:ConnectionString"];
+var isAzureSignalRValid = azureEnabled && !string.IsNullOrEmpty(connectionString);
 
 // Add services to the container.
-if (azureSignalROptions.IsValid)
+if (isAzureSignalRValid)
 {
     // Use Azure SignalR Service for scalability
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
     builder.Services.AddSignalR()
-        .AddAzureSignalR(azureSignalROptions.ConnectionString);
+        .AddAzureSignalR(connectionString);
     
     // Configure Circuit options for Azure SignalR
     builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>

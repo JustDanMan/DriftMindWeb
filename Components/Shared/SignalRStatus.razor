@@ -1,6 +1,5 @@
-@using Microsoft.Extensions.Options
-@using DriftMindWeb.Configuration
-@inject IOptions<AzureSignalROptions> AzureSignalROptions
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
 
 <div class="signalr-status-card">
     <div class="card-header">
@@ -11,8 +10,9 @@
     </div>
     <div class="card-body">
         @{
-            var options = AzureSignalROptions.Value ?? new AzureSignalROptions();
-            var isAzureEnabled = options.IsValid;
+            var enabled = Configuration.GetValue<bool>("AzureSignalR:Enabled");
+            var connectionString = Configuration["AzureSignalR:ConnectionString"];
+            var isAzureEnabled = enabled && !string.IsNullOrEmpty(connectionString);
             var mode = isAzureEnabled ? "Azure SignalR" : "Lokal";
         }
         
