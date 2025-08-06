@@ -24,6 +24,12 @@ if (isAzureSignalRValid)
     builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
     {
         options.DetailedErrors = builder.Environment.IsDevelopment();
+        // JSInterop timeout optimized for Azure SignalR (default: 1 min)
+        options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(3);
+        // Circuit retention for better reconnection (default: 3 min)
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+        // More UI update buffer for chat apps (default: 10)
+        options.MaxBufferedUnacknowledgedRenderBatches = 50;
     });
 }
 else
@@ -36,6 +42,12 @@ else
     builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
     {
         options.DetailedErrors = builder.Environment.IsDevelopment();
+        // JSInterop timeout optimized for Azure SignalR (default: 1 min)
+        options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(3);
+        // Circuit retention for better reconnection (default: 3 min)
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+        // More UI update buffer for chat apps (default: 10)
+        options.MaxBufferedUnacknowledgedRenderBatches = 50;
     });
 }
 
