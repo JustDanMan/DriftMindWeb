@@ -473,7 +473,18 @@
         gap: 1rem;
     }
     
+    /* Make skeleton grid responsive too */
+    .skeleton-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
     .document-card {
+        padding: 1rem;
+    }
+    
+    /* Make skeleton cards responsive too */
+    .skeleton-document-card {
         padding: 1rem;
     }
     
@@ -486,8 +497,21 @@
         align-items: flex-start;
     }
     
+    /* Make skeleton headers responsive too */
+    .skeleton-document-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
     .document-actions {
         margin-top: 1rem;
+        align-self: flex-end;
+    }
+    
+    /* Make skeleton actions responsive too */
+    .skeleton-document-actions {
+        margin-top: 1rem;
+        margin-left: 0;
         align-self: flex-end;
     }
 }
@@ -503,6 +527,19 @@
     
     .filter-section .col-md-4 {
         margin-bottom: 1rem;
+    }
+    
+    /* Make skeleton cards even more compact on small screens */
+    .skeleton-document-card {
+        padding: 0.75rem;
+    }
+    
+    .skeleton-document-stats {
+        padding: 0.75rem;
+    }
+    
+    .skeleton-document-preview {
+        padding: 0.75rem;
     }
 }
 
