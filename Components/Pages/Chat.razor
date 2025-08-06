@@ -40,13 +40,13 @@
         {
             <div class="upload-form">
                 <div class="upload-tabs">
-                    <button type="button" class="btn @(uploadMode == "text" ? "btn-primary" : "btn-outline-primary") me-2" 
-                            @onclick="@(() => SetUploadMode("text"))">
-                        <i class="bi bi-textarea-t"></i> Text eingeben
-                    </button>
-                    <button type="button" class="btn @(uploadMode == "file" ? "btn-primary" : "btn-outline-primary")" 
+                    <button type="button" class="btn @(uploadMode == "file" ? "btn-primary" : "btn-outline-primary") me-2" 
                             @onclick="@(() => SetUploadMode("file"))">
                         <i class="bi bi-file-earmark-arrow-up"></i> Datei hochladen
+                    </button>
+                    <button type="button" class="btn @(uploadMode == "text" ? "btn-primary" : "btn-outline-primary")" 
+                            @onclick="@(() => SetUploadMode("text"))">
+                        <i class="bi bi-textarea-t"></i> Text eingeben
                     </button>
                 </div>
 
@@ -330,7 +330,7 @@
     private string documentText = "";
     private string documentId = "";
     private string metadata = "";
-    private string uploadMode = "text"; // "text" oder "file"
+    private string uploadMode = "file"; // "text" oder "file"
     private int chunkSize = 300;
     private int chunkOverlap = 20;
     private bool showUpload = false;
