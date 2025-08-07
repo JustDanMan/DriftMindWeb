@@ -55,8 +55,36 @@
                     <div class="text-upload-section">
                         <div class="mb-3">
                             <label for="documentText" class="form-label">Text/Dokument</label>
-                            <textarea @bind="documentText" class="form-control" id="documentText" rows="6" 
+                            <textarea value="@documentText" 
+                                      @oninput="OnTextInput"
+                                      maxlength="@MAX_TEXT_LENGTH"
+                                      class="form-control" 
+                                      id="documentText" rows="6" 
                                       placeholder="Fügen Sie hier Ihren Text ein..."></textarea>
+                            
+                            <!-- Zeichenzähler -->
+                            <div class="form-text d-flex justify-content-between">
+                                <span>
+                                    @documentText.Length.ToString("N0") / @MAX_TEXT_LENGTH.ToString("N0") Zeichen
+                                </span>
+                                @if (documentText.Length > WARNING_TEXT_LENGTH)
+                                {
+                                    <span class="text-warning">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        Text wird groß
+                                    </span>
+                                }
+                            </div>
+                            
+                            <!-- Warnungen -->
+                            @if (documentText.Length > WARNING_TEXT_LENGTH)
+                            {
+                                <div class="alert alert-warning mt-2">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Hinweis:</strong> Text wird groß (@documentText.Length.ToString("N0") Zeichen). 
+                                    <strong>Für größere Texte verwenden Sie bitte den Datei-Upload</strong> - das ist stabiler und effizienter.
+                                </div>
+                            }
                         </div>
                     </div>
                 }
@@ -330,7 +358,7 @@
     private string documentText = "";
     private string documentId = "";
     private string metadata = "";
-    private string uploadMode = "file"; // "text" oder "file"
+    private string uploadMode = "file"; // "text" or "file"
     private int chunkSize = 300;
     private int chunkOverlap = 20;
     private bool showUpload = false;
@@ -340,41 +368,101 @@
     private ElementReference chatContainer;
     private IBrowserFile? selectedFile;
     
-    // Duplikatsprüfung
+    // Duplicate file check
     private bool showDuplicateModal = false;
     private string? duplicateFileName = null;
     private string? existingDocumentId = null;
     
-    // Cache für DocumentId -> FileName Mapping
+    // Cache for DocumentId -> FileName mapping
     private Dictionary<string, string> documentNameCache = new();
     
-    // Scroll-Management
+    // Scroll management
     private int lastMessageCount = 0;
     
-    // Konfigurierbare Chat-Parameter
+    // Configurable chat parameters
     private int MaxSourcesForAnswer => Configuration.GetValue<int>("ChatService:MaxSourcesForAnswer", 5);
     private int MaxContextLength => Configuration.GetValue<int>("ChatService:MaxContextLength", 12000);
     
-    // Chatverlauf-Konfiguration
+    // Chat history configuration
     private bool ChatHistoryEnabled => Configuration.GetValue<bool>("ChatService:ChatHistoryEnabled", true);
     private int MaxChatHistoryMessages => Configuration.GetValue<int>("ChatService:MaxChatHistoryMessages", 5);
     private int ChatHistoryContextPercentage => Configuration.GetValue<int>("ChatService:ChatHistoryContextPercentage", 30);
     
-    // Konfigurierbarer Upload-Limit
+    // Configurable upload limit
     private int MaxUploadSizeMB => Configuration.GetValue<int>("DriftMindApi:MaxUploadSizeMB", 3);
     private long MaxUploadSizeBytes => MaxUploadSizeMB * 1024 * 1024;
+    
+    // Text upload limits (pure Blazor-native)
+    private const int MAX_TEXT_LENGTH = 15000;     // 15KB hard limit for circuit stability
+    private const int WARNING_TEXT_LENGTH = 10000; // 10KB warning
+    
+    // Helper properties for text upload
+    private Timer? debounceTimer;
+    private bool isUpdating = false;
+
+    private void OnTextInput(ChangeEventArgs e)
+    {
+        // Prevent multiple parallel executions
+        if (isUpdating) return;
+        
+        isUpdating = true;
+        
+        try
+        {
+            var newText = e.Value?.ToString() ?? "";
+            
+            // Truncate immediately if too long (prevents circuit overload)
+            if (newText.Length > MAX_TEXT_LENGTH)
+            {
+                documentText = newText.Substring(0, MAX_TEXT_LENGTH);
+                
+                // Debounced warning - only every 2 seconds
+                debounceTimer?.Dispose();
+                debounceTimer = new Timer(ShowTruncationWarning, null, 2000, Timeout.Infinite);
+            }
+            else
+            {
+                documentText = newText;
+            }
+        }
+        finally
+        {
+            isUpdating = false;
+        }
+        
+        // No StateHasChanged() here - automatically called after event handler
+    }
+
+    private void ShowTruncationWarning(object? state)
+    {
+        InvokeAsync(() =>
+        {
+            messages.Add(new ChatMessage
+            {
+                Type = "assistant", 
+                Content = $"⚠️ Text wurde auf {MAX_TEXT_LENGTH:N0} Zeichen gekürzt.",
+                Timestamp = DateTime.Now
+            });
+            StateHasChanged();
+        });
+    }
 
     protected override void OnInitialized()
     {
-        // Messages-Liste bleibt erstmal leer, um das Flackern zu vermeiden
+        // Keep messages list empty initially to avoid flicker
         lastMessageCount = messages.Count;
+    }
+
+    public void Dispose()
+    {
+        debounceTimer?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Füge die Willkommensnachricht erst hinzu, wenn die Komponente vollständig geladen ist
+            // Add welcome message only when component is fully loaded
             messages.Add(new ChatMessage
             {
                 Type = "assistant",
@@ -383,8 +471,8 @@
             });
             
             lastMessageCount = messages.Count;
-            StateHasChanged(); // UI aktualisieren
-            await ScrollToNewMessage(); // Zur Nachricht scrollen
+            StateHasChanged(); // Update UI
+            await ScrollToNewMessage(); // Scroll to message
         }
     }
 
@@ -451,7 +539,7 @@
         {
             if (uploadMode == "text" && !string.IsNullOrWhiteSpace(documentText))
             {
-                // Text Upload - Erstelle temporäre Datei und lade sie hoch
+                // Text Upload - Create temporary file and upload it
                 var response = await ApiService.UploadTextAsFileAsync(
                     documentText,
                     string.IsNullOrWhiteSpace(documentId) ? null : documentId,
@@ -481,11 +569,11 @@
             }
             else if (selectedFile != null)
             {
-                // Prüfe zuerst auf Duplikate
+                // Check for duplicates first
                 var (exists, existingDocId) = await CheckFileExists(selectedFile.Name);
                 if (exists && !string.IsNullOrEmpty(existingDocId))
                 {
-                    // Zeige Duplikat-Modal
+                    // Show duplicate modal
                     duplicateFileName = selectedFile.Name;
                     existingDocumentId = existingDocId;
                     showDuplicateModal = true;
@@ -498,7 +586,7 @@
                 await PerformFileUpload();
             }
             
-            // Reset form nach erfolgreichem Upload
+            // Reset form after successful upload
             ResetUploadForm();
         }
         finally
@@ -542,7 +630,7 @@
         
         isSearching = true;
         StateHasChanged();
-        await ScrollToBottom(); // Für User-Nachrichten bleibt ScrollToBottom
+        await ScrollToBottom(); // For user messages keep ScrollToBottom
         
         try
         {
@@ -578,7 +666,7 @@
                 
                 messages.Add(chatMessage);
                 
-                // Lade Dateinamen für alle unique DocumentIds
+                // Load filenames for all unique DocumentIds
                 if (chatMessage.Results?.Count > 0)
                 {
                     var uniqueDocumentIds = chatMessage.Results.Select(r => r.DocumentId).Distinct().ToList();
@@ -615,7 +703,7 @@
         {
             isSearching = false;
             StateHasChanged();
-            await ScrollToNewMessage(); // Für Assistant-Antworten zum Anfang der neuen Nachricht scrollen
+            await ScrollToNewMessage(); // For assistant answers scroll to beginning of new message
         }
     }
 
@@ -627,30 +715,30 @@
     
     private async Task ScrollToNewMessage()
     {
-        // Prüfe, ob eine neue Assistant-Nachricht hinzugefügt wurde
+        // Check if a new assistant message was added
         if (messages.Count > lastMessageCount && messages.LastOrDefault()?.Type == "assistant")
         {
-            await Task.Delay(150); // Kurz warten, damit das DOM aktualisiert wird
+            await Task.Delay(150); // Wait briefly for DOM to update
             
             var lastMessage = messages.LastOrDefault();
             if (lastMessage != null)
             {
                 try
                 {
-                    // Erstelle eine eindeutige ID für die letzte Nachricht
+                    // Create unique ID for last message
                     var messageId = $"message-{lastMessage.Id}";
                     await JSRuntime.InvokeVoidAsync("scrollToMessage", messageId);
                 }
                 catch
                 {
-                    // Fallback: Normale Scroll-Funktion falls JavaScript fehlschlägt
+                    // Fallback: Normal scroll function if JavaScript fails
                     await ScrollToBottom();
                 }
             }
         }
         else
         {
-            // Für User-Nachrichten oder andere Fälle: normal nach unten scrollen
+            // For user messages or other cases: scroll down normally
             await ScrollToBottom();
         }
         
@@ -659,21 +747,21 @@
 
     private List<DriftMindWeb.Services.ChatMessage>? BuildChatHistory()
     {
-        if (!ChatHistoryEnabled || messages.Count <= 1) // Erste Begrüßungsnachricht nicht mitzählen
+        if (!ChatHistoryEnabled || messages.Count <= 1) // Don't include first welcome message
             return null;
 
-        // Hole die letzten Nachrichten (exklusive der ersten Begrüßungsnachricht)
+        // Get last messages (excluding first welcome message)
         var relevantMessages = messages
-            .Skip(1) // Überspringe die erste Begrüßungsnachricht
+            .Skip(1) // Skip first welcome message
             .Where(m => m.Type == "user" || m.Type == "assistant")
             .OrderBy(m => m.Timestamp)
-            .TakeLast(MaxChatHistoryMessages * 2) // User + Assistant Paare
+            .TakeLast(MaxChatHistoryMessages * 2) // User + Assistant pairs
             .ToList();
 
         if (!relevantMessages.Any())
             return null;
 
-        // Konvertiere zu ChatMessage (API-Format)
+        // Convert to ChatMessage (API format)
         var chatHistory = relevantMessages.Select(m => new DriftMindWeb.Services.ChatMessage
         {
             Role = m.Type,
@@ -686,7 +774,7 @@
 
     private string TruncateForChatHistory(string content)
     {
-        // Berechne die maximale Länge pro Nachricht basierend auf dem Kontextprozentsatz
+        // Calculate maximum length per message based on context percentage
         var chatHistoryContextLength = (int)(MaxContextLength * (ChatHistoryContextPercentage / 100.0));
         var maxLengthPerMessage = Math.Max(100, chatHistoryContextLength / Math.Max(1, MaxChatHistoryMessages * 2));
 
@@ -698,17 +786,17 @@
 
     private bool HasChatHistory()
     {
-        return messages.Count > 1; // Mehr als nur die Begrüßungsnachricht
+        return messages.Count > 1; // More than just welcome message
     }
 
     private int GetChatHistoryCount()
     {
-        return Math.Max(0, messages.Count - 1); // Begrüßungsnachricht nicht mitzählen
+        return Math.Max(0, messages.Count - 1); // Don't count welcome message
     }
 
     private int GetUserMessagesCount()
     {
-        return messages.Where(m => m.Type == "user" || m.Type == "assistant").Count() - 1; // Ohne Begrüßung
+        return messages.Where(m => m.Type == "user" || m.Type == "assistant").Count() - 1; // Without welcome
     }
 
     private string GetChatHistoryIndicator()
@@ -755,7 +843,7 @@
 
     private async Task ClearChatHistory()
     {
-        // Behalte nur die erste Begrüßungsnachricht
+        // Keep only first welcome message
         var welcomeMessage = messages.FirstOrDefault();
         messages.Clear();
         
@@ -765,7 +853,7 @@
         }
         else
         {
-            // Fallback: Erstelle eine neue Begrüßungsnachricht
+            // Fallback: Create new welcome message
             messages.Add(new ChatMessage
             {
                 Type = "assistant",
@@ -797,7 +885,7 @@
 
     private async Task<string> GetDocumentFileName(string documentId)
     {
-        // Prüfe Cache zuerst
+        // Check cache first
         if (documentNameCache.TryGetValue(documentId, out var cachedName))
         {
             return cachedName;
@@ -805,31 +893,31 @@
 
         try
         {
-            // Lade Dokument-Info von der API
+            // Load document info from API
             var response = await ApiService.GetDocumentsAsync(1, 0, documentId);
             if (response?.Success == true && response.Documents.Count > 0)
             {
                 var document = response.Documents[0];
                 var fileName = !string.IsNullOrEmpty(document.FileName) ? document.FileName : documentId;
                 
-                // Cache das Ergebnis
+                // Cache the result
                 documentNameCache[documentId] = fileName;
                 return fileName;
             }
         }
         catch (Exception)
         {
-            // Bei Fehler verwende DocumentId als Fallback
+            // On error use DocumentId as fallback
         }
 
-        // Fallback: verwende DocumentId
+        // Fallback: use DocumentId
         documentNameCache[documentId] = documentId;
         return documentId;
     }
 
     private string GetDisplayFileName(string documentId)
     {
-        // Verwende Cache oder DocumentId als Fallback
+        // Use cache or DocumentId as fallback
         return documentNameCache.TryGetValue(documentId, out var cachedName) ? cachedName : documentId;
     }
 
@@ -837,7 +925,7 @@
     {
         try
         {
-            // Lade alle Dokumente und suche nach dem Dateinamen
+            // Load all documents and search for filename
             var response = await ApiService.GetDocumentsAsync(100, 0, null);
             if (response?.Success == true && response.Documents.Count > 0)
             {
@@ -852,7 +940,7 @@
         }
         catch (Exception)
         {
-            // Bei Fehler nehmen wir an, dass die Datei nicht existiert
+            // On error assume file doesn't exist
         }
 
         return (false, null);
@@ -914,16 +1002,16 @@
         
         try
         {
-            // Lösche erst das existierende Dokument
+            // First delete existing document
             if (!string.IsNullOrEmpty(existingDocumentId))
             {
                 await ApiService.DeleteDocumentAsync(existingDocumentId);
             }
             
-            // Führe den Upload durch
+            // Perform upload
             var uploadSuccess = await PerformFileUpload();
             
-            // Reset Form nur bei erfolgreichem Upload
+            // Reset form only on successful upload
             if (uploadSuccess)
             {
                 ResetUploadForm();
@@ -932,7 +1020,7 @@
         }
         finally
         {
-            // Reset Modal-Variablen
+            // Reset modal variables
             duplicateFileName = null;
             existingDocumentId = null;
             isUploading = false;
@@ -963,7 +1051,7 @@
 
     private Task HandleDownloadSuccess(string? fileName)
     {
-        // Optional: Success-Meldung anzeigen
+        // Optional: Show success message
         // messages.Add(new ChatMessage
         // {
         //     Type = "system",
@@ -976,8 +1064,8 @@
 
     public class ChatMessage
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8]; // Kurze eindeutige ID
-        public string Type { get; set; } = ""; // "user" oder "assistant"
+        public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8]; // Short unique ID
+        public string Type { get; set; } = ""; // "user" or "assistant"
         public string Content { get; set; } = "";
         public DateTime Timestamp { get; set; }
         public List<SearchResult>? Results { get; set; }
