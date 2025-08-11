@@ -161,16 +161,16 @@
                     <div class="document-card">
                         <div class="document-header">
                             <div class="document-info">
-                                <h5 class="document-title">
+                                <h5 class="document-title" title="@(string.IsNullOrEmpty(document.FileName) ? document.DocumentId : document.FileName)">
                                     @if (!string.IsNullOrEmpty(document.FileName))
                                     {
                                         <i class="bi @GetFileIcon(document.FileType)"></i>
-                                        @document.FileName
+                                        <span class="document-title-text">@document.FileName</span>
                                     }
                                     else
                                     {
                                         <i class="bi bi-file-text"></i>
-                                        @document.DocumentId
+                                        <span class="document-title-text">@document.DocumentId</span>
                                     }
                                 </h5>
                                 <p class="document-id text-muted">
