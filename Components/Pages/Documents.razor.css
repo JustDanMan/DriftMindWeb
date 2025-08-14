@@ -495,6 +495,30 @@
         grid-template-columns: 1fr;
         gap: 1rem;
     }
+}
+
+/* Improved responsive breakpoints for better mobile experience */
+@media (max-width: 1200px) {
+    .documents-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+    
+    .skeleton-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 992px) {
+    .documents-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    
+    .skeleton-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
     
     .document-card {
         padding: 1rem;
