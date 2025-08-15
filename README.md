@@ -443,8 +443,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 ### Getting Help
 For questions, issues, or feature requests:
 - **GitHub Issues**: [Open an Issue](https://github.com/JustDanMan/DriftMindWeb/issues)
-- **Discussions**: Join community discussions for tips and best practices
-- **Documentation**: Check the linked documentation files for detailed guides
 
 ### Troubleshooting
 Common issues and solutions:
@@ -452,13 +450,6 @@ Common issues and solutions:
 - **Upload Problems**: Verify file size limits and supported formats
 - **API Connectivity**: Ensure DriftMind API is running and accessible
 - **Performance**: Monitor document count and consider pagination settings
-
-### Contributing
-We welcome contributions! Please see our contributing guidelines for:
-- Code style and standards
-- Pull request process
-- Issue reporting guidelines
-- Feature request procedures
 
 ---
 
