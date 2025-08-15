@@ -271,46 +271,6 @@ For load balancers and multiple instances:
 }
 ```
 
-## 📖 Usage
-
-### 1. Using the Chat Interface
-1. Navigate to the **Chat** page
-2. Choose between **Text Upload** (direct text input) or **File Upload** 
-3. **Text Upload**: Enter up to 15KB of text directly
-4. **File Upload**: Select supported files (.txt, .md, .pdf, .docx up to 12MB)
-5. Configure advanced options:
-   - Document ID (optional, for organization)
-   - Metadata (optional, additional information)
-   - Chunk Size (default: 300 characters)
-   - Chunk Overlap (default: 20 characters)
-6. Upload your content and wait for processing confirmation
-7. Ask questions about the uploaded content in natural language
-8. Receive AI-generated answers with **source citations** and relevance scores
-9. Use **Chat History** for follow-up questions and contextual conversations
-10. **Download sources** directly from search results using secure links
-
-### 2. Managing Documents
-1. Visit the **Documents** page to see all uploaded documents
-2. Use **pagination controls** for large document collections
-3. **Preview document content** by expanding document cards
-4. **Filter documents** by type, ID, or content using search
-5. **Download original files** using the secure download system
-6. **Delete unnecessary documents** with confirmation dialogs
-7. View detailed **metadata** including file sizes, chunk counts, and upload dates
-
-### 3. Real-time Features
-1. Check **SignalR Status** in the sidebar for connection health
-2. Visit **SignalR Info** page for detailed connection information
-3. Monitor connection type (Local vs Azure SignalR Service)
-4. Experience real-time chat updates without page refreshes
-
-### 4. Advanced Features
-- **Progressive Loading**: Documents load smoothly as you scroll
-- **Responsive Design**: Optimized experience on all device sizes
-- **Keyboard Navigation**: Full keyboard accessibility support
-- **Error Recovery**: Automatic reconnection and error handling
-- **Dark Mode**: Optimized for extended usage with eye-friendly design
-
 ## 🔌 API Integration
 
 The application communicates with the DriftMind API through the following endpoints:
@@ -378,53 +338,6 @@ var downloadRequest = new { token = "secure-token" };
 - **File Types**: Validated against supported extensions
 - **Content Validation**: Automatic file type detection and validation
 
-## 🚦 Status & Roadmap
-
-### ✅ Implemented Features
-- **Chat Interface**: Full ChatGPT-like experience with history and context
-- **Document Management**: Complete CRUD operations with advanced pagination
-- **Real-time Communication**: SignalR integration (local and Azure)
-- **Secure Downloads**: Token-based file access with time expiration
-- **Multi-format Support**: Text, Markdown, PDF, and DOCX processing
-- **Dark Mode Design**: Modern, responsive UI optimized for extended use
-- **Progressive Loading**: Smooth user experience with skeleton loading
-- **Error Handling**: Comprehensive error recovery and user feedback
-- **Accessibility**: Full keyboard navigation and screen reader support
-- **Markdown Rendering**: Rich text display in chat responses
-- **Chat History**: Intelligent conversation context preservation
-- **Duplicate Detection**: Smart handling of duplicate file uploads
-
-### 🔄 Current Optimizations
-- **Performance Tuning**: Optimized for large document collections
-- **Memory Management**: Efficient handling of chat history and document data
-- **Connection Resilience**: Enhanced SignalR connection stability
-- **Cache Management**: Smart caching for improved response times
-
-### 🔮 Planned Enhancements
-- **Multi-language Support**: Extended language support for international users
-- **Advanced Search Filters**: More granular document filtering options
-- **Batch Upload**: Multiple file upload functionality
-- **Export Features**: Document export in various formats
-- **User Preferences**: Customizable UI themes and settings
-- **Analytics Dashboard**: Usage statistics and insights
-- **API Rate Limiting**: Advanced throttling and quota management
-- **Collaborative Features**: Shared document spaces and commenting
-
-### 📊 Performance Metrics
-- **Chat Response Time**: < 2 seconds for typical queries
-- **File Upload**: < 10 seconds for 12MB files
-- **Document Loading**: Progressive loading with < 1 second initial load
-- **Search Performance**: < 500ms for semantic search queries
-- **Real-time Updates**: < 100ms SignalR message delivery
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
 ## 📝 License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
@@ -434,9 +347,6 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 - [DriftMind API Documentation](./README.DriftMind.md) - Complete API reference and setup guide
 - [Azure SignalR Setup Guide](./AZURE_SIGNALR_SETUP.md) - Detailed SignalR configuration
 - [Shared Data Protection Setup](./SHARED_DATA_PROTECTION_SETUP.md) - Multi-instance deployment guide
-- [Blazor Documentation](https://docs.microsoft.com/aspnet/core/blazor/) - Official Blazor docs
-- [Bootstrap 5 Documentation](https://getbootstrap.com/docs/5.3/) - UI framework reference
-- [SignalR Documentation](https://docs.microsoft.com/aspnet/core/signalr/) - Real-time communication guide
 
 ## 💡 Support
 
