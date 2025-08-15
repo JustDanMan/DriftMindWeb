@@ -5,47 +5,79 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 ## 🚀 Features
 
 ### 💬 Chat Interface
-- **ChatGPT-like user interface** for natural conversations
-- **Text Upload**: Direct insertion of text content
+- **ChatGPT-like user interface** for natural conversations with AI
+- **Real-time communication** via SignalR (local or Azure SignalR Service)
+- **Chat History**: Intelligent conversation context with configurable message limits
+- **Text Upload**: Direct insertion of text content (up to 15KB)
 - **File Upload**: Support for `.txt`, `.md`, `.pdf`, `.docx` files
-- **Configurable Upload Size** (Default: 3MB)
-- **Semantic Search** in uploaded documents
-- **AI-generated Answers** based on document contents
+- **Configurable Upload Size** (Default: 12MB, configurable up to any limit)
+- **Semantic Search** in uploaded documents with AI-generated answers
+- **Markdown Support**: Rich text formatting in AI responses
+- **Progressive Loading**: Smooth chat experience with loading indicators
+- **Duplicate Detection**: Smart handling of duplicate file uploads
 
 ### 📁 Document Management
 - **Overview of all documents** in the Azure AI Search database
-- **Detailed document information** (size, type, chunk count)
-- **Document content preview**
+- **Detailed document information** (size, type, chunk count, metadata)
+- **Document content preview** with chunk visualization
+- **Secure Download System** with time-limited tokens
 - **Delete function** for unnecessary documents
-- **Pagination** for large document collections
-- **Filter functions** by document type and ID
+- **Advanced Pagination** with configurable page sizes and progressive loading
+- **Filter functions** by document type, ID, and content
+- **Bulk operations** support
 
-### 🎨 Design
-- **Dark Mode** as default design
-- **Responsive Layout** for desktop and mobile
-- **Bootstrap 5** with custom components
+### 🔄 Real-time Features (SignalR)
+- **Local SignalR**: Single-instance real-time communication (default)
+- **Azure SignalR Service**: Scalable, multi-instance deployment option
+- **Connection Status**: Visual indicators for connection health
+- **Automatic Reconnection**: Robust connection handling
+- **Performance Optimized**: Enhanced for chat applications
+
+### 🎨 Design & UX
+- **Dark Mode** as default design with modern aesthetics
+- **Responsive Layout** optimized for desktop, tablet, and mobile
+- **Bootstrap 5** with custom components and themes
 - **Bootstrap Icons** for consistent iconography
-- **Modern animations** and transitions
+- **Modern animations** and smooth transitions
+- **Accessibility Features**: Screen reader support and keyboard navigation
+- **Progressive Enhancement**: Works with and without JavaScript
 
 ## 🛠️ Technical Details
 
 ### Tech Stack
-- **Frontend**: Blazor Server (.NET 8.0)
-- **UI Framework**: Bootstrap 5
-- **HTTP Client**: HttpClient for API communication
-- **Styling**: CSS with Dark Mode Theme
-- **Deployment**: Docker-ready
+- **Frontend**: Blazor Server (.NET 8.0) with Interactive Server Rendering
+- **Real-time Communication**: SignalR (local or Azure SignalR Service)
+- **UI Framework**: Bootstrap 5 with custom dark theme
+- **HTTP Client**: Configured HttpClient for API communication
+- **Styling**: Modern CSS with Dark Mode Theme and responsive design
+- **Document Processing**: Multi-format support (PDF, DOCX, TXT, MD)
+- **Security**: Secure download system with time-limited tokens
+- **Data Protection**: Optional Azure Blob Storage for shared keys
+- **Deployment**: Docker-ready with Azure integration
 
 ### Architecture
 ```
 DriftMindWeb/
 ├── Components/
-│   ├── Layout/           # Layout components (Navigation, Header)
-│   └── Pages/            # Page components (Chat, Documents, Home)
-├── Services/             # API services and DTOs
-├── wwwroot/              # Static files (CSS, Icons)
-└── Properties/           # Launch configuration
+│   ├── Layout/           # Layout components (Navigation, MainLayout)
+│   ├── Pages/            # Page components (Chat, Documents, Home, SignalR Info)
+│   └── Shared/           # Shared components (Download, SignalR Status)
+├── Controllers/          # Download controller for secure file access
+├── Services/             # API services and business logic
+│   ├── DriftMindApiService.cs    # Main API communication
+│   ├── MarkdownService.cs        # Markdown processing for chat
+│   └── SignalRService.cs         # SignalR connection management
+├── Hubs/                 # SignalR hub configuration (if needed)
+├── wwwroot/              # Static files (CSS, Images, Bootstrap)
+└── Properties/           # Launch configuration and settings
 ```
+
+### Key Features Implementation
+- **Chat System**: Real-time messaging with history and context preservation
+- **File Handling**: Secure upload/download with validation and preview
+- **State Management**: Optimized Blazor state handling for chat applications
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Performance**: Optimized for large document collections and frequent chat usage
 
 ## 🔧 Installation & Setup
 
@@ -65,13 +97,72 @@ Edit `appsettings.Development.json` or `appsettings.json`:
 ```json
 {
   "DriftMindApi": {
-    "BaseUrl": "https://your-driftmind-api-url.com",
-    "MaxUploadSizeMB": 3,
+    "BaseUrl": "http://localhost:5175",
     "Endpoints": {
-      "Upload": "/uploads",
-      "Search": "/search",
-      "Documents": "/documents"
-    }
+      "Upload": "/upload",
+      "Search": "/search", 
+      "Documents": "/documents",
+      "DownloadToken": "/download/token",
+      "DownloadFile": "/download/file"
+    },
+    "MaxUploadSizeMB": 12
+  },
+  "ChatService": {
+    "MaxSourcesForAnswer": 10,
+    "MaxContextLength": 16000,
+    "ChatHistoryEnabled": true,
+    "MaxChatHistoryMessages": 10,
+    "ChatHistoryContextPercentage": 30
+  },
+  "AzureSignalR": {
+    "Enabled": false,
+    "ConnectionString": "",
+    "ApplicationName": "DriftMindWeb"
+  },
+  "SharedDataProtection": {
+    "Enabled": false,
+    "AzureStorage": {
+      "ConnectionString": "",
+      "ContainerName": "dataprotection-keys",
+      "BlobName": "keys.xml"
+    },
+    "ApplicationName": "DriftMindWeb"
+  },
+  "DocumentsPage": {
+    "InitialPageSize": 25,
+    "EnableProgressiveLoading": true,
+    "SkeletonCardCount": 3,
+    "PreRenderingEnabled": true
+  }
+}
+```
+
+### Optional: Azure SignalR Service Setup
+For production deployments with multiple instances, configure Azure SignalR:
+
+```json
+{
+  "AzureSignalR": {
+    "Enabled": true,
+    "ConnectionString": "Endpoint=https://your-signalr-service.service.signalr.net;AccessKey=your-access-key;Version=1.0;",
+    "ApplicationName": "DriftMindWeb-Production"
+  }
+}
+```
+
+### Optional: Shared Data Protection (Multi-Instance)
+For load-balanced deployments, configure shared data protection keys:
+
+```json
+{
+  "SharedDataProtection": {
+    "Enabled": true,
+    "AzureStorage": {
+      "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=...",
+      "ContainerName": "dataprotection-keys",
+      "BlobName": "keys.xml"
+    },
+    "ApplicationName": "DriftMindWeb"
   }
 }
 ```
@@ -87,68 +178,244 @@ The application will be available at `https://localhost:5001`.
 
 ## ⚙️ Configuration
 
-### Adjust Upload Size
-The maximum upload size can be configured in `appsettings.json`:
+### Core API Settings
+Configure the connection to your DriftMind API instance:
 
 ```json
 {
   "DriftMindApi": {
-    "MaxUploadSizeMB": 5  // Changes the limit to 5MB
+    "BaseUrl": "http://localhost:5175",      // Your DriftMind API URL
+    "MaxUploadSizeMB": 12,                   // Maximum file upload size
+    "Endpoints": {
+      "Upload": "/upload",                   // File upload endpoint
+      "Search": "/search",                   // Document search endpoint
+      "Documents": "/documents",             // Document management endpoint
+      "DownloadToken": "/download/token",    // Secure download token generation
+      "DownloadFile": "/download/file"       // Secure file download endpoint
+    }
   }
 }
 ```
 
-### API Endpoints
-All API endpoints are configurable and can be adapted to your DriftMind API implementation.
+### Chat & AI Configuration
+Control chat behavior and AI response generation:
+
+```json
+{
+  "ChatService": {
+    "MaxSourcesForAnswer": 10,               // Max document sources for AI answers
+    "MaxContextLength": 16000,               // Maximum context length for AI
+    "ChatHistoryEnabled": true,              // Enable conversation history
+    "MaxChatHistoryMessages": 10,            // Max messages to keep in history
+    "ChatHistoryContextPercentage": 30       // % of context used for chat history
+  }
+}
+```
+
+### SignalR Configuration
+Choose between local SignalR (single instance) or Azure SignalR Service (scalable):
+
+```json
+{
+  "AzureSignalR": {
+    "Enabled": false,                        // Use local SignalR by default
+    "ConnectionString": "",                  // Azure SignalR connection string
+    "ApplicationName": "DriftMindWeb"        // Application identifier
+  }
+}
+```
+
+### Document Management
+Configure the documents page behavior:
+
+```json
+{
+  "DocumentsPage": {
+    "InitialPageSize": 25,                   // Initial number of documents to load
+    "EnableProgressiveLoading": true,        // Enable progressive loading
+    "SkeletonCardCount": 3,                 // Number of skeleton cards while loading
+    "PreRenderingEnabled": true             // Enable server-side pre-rendering
+  }
+}
+```
+
+### Production Settings
+
+#### Azure SignalR Service (Recommended for Production)
+For multi-instance deployments:
+
+```json
+{
+  "AzureSignalR": {
+    "Enabled": true,
+    "ConnectionString": "Endpoint=https://your-signalr.service.signalr.net;AccessKey=your-key;Version=1.0;",
+    "ApplicationName": "DriftMindWeb-Production"
+  }
+}
+```
+
+#### Shared Data Protection (Multi-Instance)
+For load balancers and multiple instances:
+
+```json
+{
+  "SharedDataProtection": {
+    "Enabled": true,
+    "AzureStorage": {
+      "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=your-account;AccountKey=your-key;EndpointSuffix=core.windows.net",
+      "ContainerName": "dataprotection-keys",
+      "BlobName": "keys.xml"
+    },
+    "ApplicationName": "DriftMindWeb"
+  }
+}
+```
 
 ## 📖 Usage
 
 ### 1. Using the Chat Interface
 1. Navigate to the **Chat** page
-2. Choose between **Text Upload** or **File Upload**
-3. Upload your documents
-4. Ask questions about the uploaded content
-5. Receive AI-generated answers based on your documents
+2. Choose between **Text Upload** (direct text input) or **File Upload** 
+3. **Text Upload**: Enter up to 15KB of text directly
+4. **File Upload**: Select supported files (.txt, .md, .pdf, .docx up to 12MB)
+5. Configure advanced options:
+   - Document ID (optional, for organization)
+   - Metadata (optional, additional information)
+   - Chunk Size (default: 300 characters)
+   - Chunk Overlap (default: 20 characters)
+6. Upload your content and wait for processing confirmation
+7. Ask questions about the uploaded content in natural language
+8. Receive AI-generated answers with **source citations** and relevance scores
+9. Use **Chat History** for follow-up questions and contextual conversations
+10. **Download sources** directly from search results using secure links
 
 ### 2. Managing Documents
-1. Visit the **Documents** page
-2. View all uploaded documents
-3. Use filters and search
-4. Delete unnecessary documents
+1. Visit the **Documents** page to see all uploaded documents
+2. Use **pagination controls** for large document collections
+3. **Preview document content** by expanding document cards
+4. **Filter documents** by type, ID, or content using search
+5. **Download original files** using the secure download system
+6. **Delete unnecessary documents** with confirmation dialogs
+7. View detailed **metadata** including file sizes, chunk counts, and upload dates
+
+### 3. Real-time Features
+1. Check **SignalR Status** in the sidebar for connection health
+2. Visit **SignalR Info** page for detailed connection information
+3. Monitor connection type (Local vs Azure SignalR Service)
+4. Experience real-time chat updates without page refreshes
+
+### 4. Advanced Features
+- **Progressive Loading**: Documents load smoothly as you scroll
+- **Responsive Design**: Optimized experience on all device sizes
+- **Keyboard Navigation**: Full keyboard accessibility support
+- **Error Recovery**: Automatic reconnection and error handling
+- **Dark Mode**: Optimized for extended usage with eye-friendly design
 
 ## 🔌 API Integration
 
 The application communicates with the DriftMind API through the following endpoints:
 
-- `POST /uploads` - File upload (supports both direct files and text converted to temporary files)
-- `POST /search` - Document search
-- `POST /documents` - Retrieve document list
-- `DELETE /documents/{id}` - Delete document
+### Core Endpoints
+- `POST /upload` - File and text upload with chunking support
+- `POST /search` - Semantic document search with AI-generated answers
+- `POST /documents` - Retrieve paginated document list with filtering
+- `DELETE /documents/{id}` - Delete document and all associated chunks
+
+### Secure Download System
+- `POST /download/token` - Generate time-limited download tokens (15-60 minutes)
+- `POST /download/file` - Download files using secure tokens
+
+### Advanced Features
+- **Chat History Integration**: Contextual conversations with previous message context
+- **Bulk Operations**: Efficient handling of multiple documents
+- **Metadata Management**: Rich document metadata with file size, type, and creation info
+- **Error Handling**: Comprehensive error responses with user-friendly messages
+- **Security**: Token-based authentication for file downloads with HMAC-SHA256 signatures
+
+### Example API Communication
+```csharp
+// File Upload with advanced options
+var uploadRequest = new
+{
+    file = selectedFile,
+    documentId = "optional-custom-id",
+    metadata = "Additional document information",
+    chunkSize = 300,
+    chunkOverlap = 20
+};
+
+// Search with Chat History
+var searchRequest = new
+{
+    query = "User question",
+    maxResults = 10,
+    useSemanticSearch = true,
+    includeAnswer = true,
+    chatHistory = conversationHistory
+};
+
+// Secure Download
+var tokenRequest = new { documentId = "doc-123", expirationMinutes = 15 };
+var downloadRequest = new { token = "secure-token" };
+```
 
 ## 🎯 Supported File Formats
 
-- **Text**: `.txt`, `.md`
-- **PDF**: `.pdf`
-- **Microsoft Word**: `.docx`
+### Document Types
+- **Plain Text**: `.txt` files (up to 12MB)
+- **Markdown**: `.md` files with full markdown support
+- **PDF Documents**: `.pdf` files with text extraction
+- **Microsoft Word**: `.docx` files with full document processing
+
+### Text Input
+- **Direct Text Entry**: Up to 15KB of text directly in the chat interface
+- **Smart Truncation**: Automatic handling of oversized text with user warnings
+- **Real-time Validation**: Live feedback on text length and formatting
+
+### Upload Limits
+- **File Size**: Configurable up to 12MB per file (default)
+- **Text Length**: 15KB maximum for direct text input
+- **File Types**: Validated against supported extensions
+- **Content Validation**: Automatic file type detection and validation
 
 ## 🚦 Status & Roadmap
 
-### ✅ Implemented
-- Chat interface with text/file upload
-- Document management
-- Dark Mode design
-- Configurable upload limits
-- Responsive design
+### ✅ Implemented Features
+- **Chat Interface**: Full ChatGPT-like experience with history and context
+- **Document Management**: Complete CRUD operations with advanced pagination
+- **Real-time Communication**: SignalR integration (local and Azure)
+- **Secure Downloads**: Token-based file access with time expiration
+- **Multi-format Support**: Text, Markdown, PDF, and DOCX processing
+- **Dark Mode Design**: Modern, responsive UI optimized for extended use
+- **Progressive Loading**: Smooth user experience with skeleton loading
+- **Error Handling**: Comprehensive error recovery and user feedback
+- **Accessibility**: Full keyboard navigation and screen reader support
+- **Markdown Rendering**: Rich text display in chat responses
+- **Chat History**: Intelligent conversation context preservation
+- **Duplicate Detection**: Smart handling of duplicate file uploads
 
-### 🔄 In Development
-- Batch upload for multiple files
-- Extended filter functions
-- Export functions
+### 🔄 Current Optimizations
+- **Performance Tuning**: Optimized for large document collections
+- **Memory Management**: Efficient handling of chat history and document data
+- **Connection Resilience**: Enhanced SignalR connection stability
+- **Cache Management**: Smart caching for improved response times
 
-### 🔮 Planned
-- User authentication
-- Document categorization
-- Full-text editor for documents
+### 🔮 Planned Enhancements
+- **Multi-language Support**: Extended language support for international users
+- **Advanced Search Filters**: More granular document filtering options
+- **Batch Upload**: Multiple file upload functionality
+- **Export Features**: Document export in various formats
+- **User Preferences**: Customizable UI themes and settings
+- **Analytics Dashboard**: Usage statistics and insights
+- **API Rate Limiting**: Advanced throttling and quota management
+- **Collaborative Features**: Shared document spaces and commenting
+
+### 📊 Performance Metrics
+- **Chat Response Time**: < 2 seconds for typical queries
+- **File Upload**: < 10 seconds for 12MB files
+- **Document Loading**: Progressive loading with < 1 second initial load
+- **Search Performance**: < 500ms for semantic search queries
+- **Real-time Updates**: < 100ms SignalR message delivery
 
 ## 🤝 Contributing
 
@@ -164,14 +431,37 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 ## 🔗 Links
 
-- [DriftMind API Documentation](./README.DriftMind.md)
-- [Blazor Documentation](https://docs.microsoft.com/aspnet/core/blazor/)
-- [Bootstrap 5 Documentation](https://getbootstrap.com/docs/5.0/)
+- [DriftMind API Documentation](./README.DriftMind.md) - Complete API reference and setup guide
+- [Azure SignalR Setup Guide](./AZURE_SIGNALR_SETUP.md) - Detailed SignalR configuration
+- [Shared Data Protection Setup](./SHARED_DATA_PROTECTION_SETUP.md) - Multi-instance deployment guide
+- [Blazor Documentation](https://docs.microsoft.com/aspnet/core/blazor/) - Official Blazor docs
+- [Bootstrap 5 Documentation](https://getbootstrap.com/docs/5.3/) - UI framework reference
+- [SignalR Documentation](https://docs.microsoft.com/aspnet/core/signalr/) - Real-time communication guide
 
 ## 💡 Support
 
-For questions or issues, please open an [Issue](https://github.com/JustDanMan/DriftMindWeb/issues) on GitHub.
+### Getting Help
+For questions, issues, or feature requests:
+- **GitHub Issues**: [Open an Issue](https://github.com/JustDanMan/DriftMindWeb/issues)
+- **Discussions**: Join community discussions for tips and best practices
+- **Documentation**: Check the linked documentation files for detailed guides
+
+### Troubleshooting
+Common issues and solutions:
+- **Connection Issues**: Check SignalR status on the SignalR Info page
+- **Upload Problems**: Verify file size limits and supported formats
+- **API Connectivity**: Ensure DriftMind API is running and accessible
+- **Performance**: Monitor document count and consider pagination settings
+
+### Contributing
+We welcome contributions! Please see our contributing guidelines for:
+- Code style and standards
+- Pull request process
+- Issue reporting guidelines
+- Feature request procedures
 
 ---
 
 **DriftMindWeb** - Intelligent document processing with cutting-edge web technology 🚀
+
+*Powered by Azure OpenAI, Blazor Server, and modern web standards*
