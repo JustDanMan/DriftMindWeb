@@ -2,8 +2,6 @@
 
 A modern Blazor Server application for interacting with the DriftMind API - an intelligent document processing and search system based on Azure OpenAI and Azure AI Search.
 
-![DriftMindWeb Home Page](docs/screenshots/driftmindweb_home.png)
-
 ## 🚀 Features
 
 ### 💬 Chat Interface
@@ -18,8 +16,6 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 - **Progressive Loading**: Smooth chat experience with loading indicators
 - **Duplicate Detection**: Smart handling of duplicate file uploads
 
-![DriftMindWeb Chat Interface](docs/screenshots/driftmindweb_chat.png)
-
 ### 📁 Document Management
 - **Overview of all documents** in the Azure AI Search database
 - **Detailed document information** (size, type, chunk count, metadata)
@@ -29,8 +25,6 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 - **Advanced Pagination** with configurable page sizes and progressive loading
 - **Filter functions** by document type, ID, and content
 - **Bulk operations** support
-
-![DriftMindWeb Document Management](docs/screenshots/driftmindweb_documents.png)
 
 ### 🔄 Real-time Features (SignalR)
 - **Local SignalR**: Single-instance real-time communication (default)
@@ -47,6 +41,8 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 - **Modern animations** and smooth transitions
 - **Accessibility Features**: Screen reader support and keyboard navigation
 - **Progressive Enhancement**: Works with and without JavaScript
+
+*📷 Visual examples of the application interface can be found in [docs/screenshots/](./docs/screenshots/)*
 
 ## 🛠️ Technical Details
 
