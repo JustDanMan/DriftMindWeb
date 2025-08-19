@@ -2,6 +2,8 @@
 
 A modern Blazor Server application for interacting with the DriftMind API - an intelligent document processing and search system based on Azure OpenAI and Azure AI Search.
 
+![DriftMindWeb Home Page](docs/screenshots/driftmindweb_home.png)
+
 ## 🚀 Features
 
 ### 💬 Chat Interface
@@ -16,6 +18,8 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 - **Progressive Loading**: Smooth chat experience with loading indicators
 - **Duplicate Detection**: Smart handling of duplicate file uploads
 
+![DriftMindWeb Chat Interface](docs/screenshots/driftmindweb_chat.png)
+
 ### 📁 Document Management
 - **Overview of all documents** in the Azure AI Search database
 - **Detailed document information** (size, type, chunk count, metadata)
@@ -25,6 +29,8 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 - **Advanced Pagination** with configurable page sizes and progressive loading
 - **Filter functions** by document type, ID, and content
 - **Bulk operations** support
+
+![DriftMindWeb Document Management](docs/screenshots/driftmindweb_documents.png)
 
 ### 🔄 Real-time Features (SignalR)
 - **Local SignalR**: Single-instance real-time communication (default)
@@ -344,9 +350,9 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 ## 🔗 Links
 
-- [DriftMind API Documentation](./README.DriftMind.md) - Complete API reference and setup guide
-- [Azure SignalR Setup Guide](./AZURE_SIGNALR_SETUP.md) - Detailed SignalR configuration
-- [Shared Data Protection Setup](./SHARED_DATA_PROTECTION_SETUP.md) - Multi-instance deployment guide
+- [DriftMind API Documentation](./docs/README.DriftMind.md) - Complete API reference and setup guide
+- [Azure SignalR Setup Guide](./docs/AZURE_SIGNALR_SETUP.md) - Detailed SignalR configuration
+- [Shared Data Protection Setup](./docs/SHARED_DATA_PROTECTION_SETUP.md) - Multi-instance deployment guide
 
 ## 💡 Support
 
