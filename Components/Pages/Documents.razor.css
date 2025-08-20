@@ -289,11 +289,16 @@
     min-width: 0; /* Allows text to shrink */
     flex: 1; /* Takes remaining space after icon */
     max-width: 100%; /* Ensures it never exceeds container width */
+    word-break: break-all; /* Break long words if necessary */
 }
 
 .document-id {
     font-size: 0.85rem;
     font-family: 'Courier New', monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 .document-actions {
@@ -555,6 +560,30 @@
         margin-left: 0;
         align-self: flex-end;
     }
+    
+    /* Ensure text truncation works on tablet and mobile screens */
+    .document-info {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow: hidden;
+    }
+    
+    .document-title-text {
+        max-width: 100%;
+        width: 100%;
+    }
+}
+
+/* Additional breakpoint for medium mobile screens */
+@media (max-width: 640px) {
+    .document-info {
+        max-width: calc(100% - 100px); /* Reserve space for buttons */
+    }
+    
+    .document-title-text {
+        max-width: 250px; /* Slightly more space than very small screens */
+    }
 }
 
 @media (max-width: 576px) {
@@ -581,6 +610,34 @@
     
     .skeleton-document-preview {
         padding: 0.75rem;
+    }
+    
+    /* Ensure text truncation works on very small screens */
+    .document-info {
+        min-width: 0;
+        max-width: calc(100% - 120px); /* Reserve space for action buttons */
+        overflow: hidden;
+    }
+    
+    .document-title {
+        max-width: 100%;
+        min-width: 0;
+    }
+    
+    .document-title-text {
+        max-width: 200px; /* Limit maximum width on small screens */
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+    }
+    
+    .document-id {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 }
 
