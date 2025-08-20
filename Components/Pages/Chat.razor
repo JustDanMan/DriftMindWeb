@@ -189,14 +189,33 @@
                         </div>
                     }
                     <div class="message-bubble">
-                        @if (message.Type == "assistant")
-                        {
-                            @((MarkupString)MarkdownService.ToHtml(message.Content))
-                        }
-                        else
-                        {
-                            @((MarkupString)message.Content.Replace("\n", "<br>"))
-                        }
+                        <div class="message-header">
+                            <div class="message-sender">
+                                @if (message.Type == "user")
+                                {
+                                    <span>Sie</span>
+                                }
+                                else
+                                {
+                                    <span>DriftMind</span>
+                                }
+                            </div>
+                            <div class="message-timestamp">
+                                <i class="bi bi-clock"></i>
+                                @message.Timestamp.ToString("HH:mm")
+                            </div>
+                        </div>
+                        
+                        <div class="message-text">
+                            @if (message.Type == "assistant")
+                            {
+                                @((MarkupString)MarkdownService.ToHtml(message.Content))
+                            }
+                            else
+                            {
+                                @((MarkupString)message.Content.Replace("\n", "<br>"))
+                            }
+                        </div>
                         
                         @if (message.Type == "assistant" && message.Results?.Count > 0)
                         {
@@ -256,9 +275,6 @@
                         }
                     </div>
                 </div>
-                <div class="message-time">
-                    @message.Timestamp.ToString("HH:mm")
-                </div>
             </div>
         }
         
@@ -269,11 +285,19 @@
                     <div class="ai-avatar">
                         <i class="bi bi-robot"></i>
                     </div>
-                    <div class="message-bubble">
-                        <div class="typing-indicator">
-                            <span></span>
-                            <span></span>
-                            <span></span>
+                    <div class="message-bubble typing-bubble">
+                        <div class="message-header typing-header">
+                            <div class="message-sender">
+                                <span>DriftMind</span>
+                            </div>
+                        </div>
+                        
+                        <div class="message-text">
+                            <div class="typing-indicator">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
                         </div>
                     </div>
                 </div>
