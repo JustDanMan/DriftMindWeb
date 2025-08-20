@@ -18,17 +18,24 @@ if (isAzureSignalRValid)
         .AddInteractiveServerComponents();
 
     builder.Services.AddSignalR()
-        .AddAzureSignalR(connectionString);
+        .AddAzureSignalR(options =>
+        {
+            options.ConnectionString = connectionString;
+            // Enable Sticky Sessions for Blazor Server Circuits
+            // This ensures that clients are always routed to the same server instance
+            options.ServerStickyMode = Microsoft.Azure.SignalR.ServerStickyMode.Required;
+        });
     
-    // Configure Circuit options for Azure SignalR
+    // Configure Circuit options for Azure SignalR with Sticky Sessions
     builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
     {
         options.DetailedErrors = builder.Environment.IsDevelopment();
-        // JSInterop timeout optimized for Azure SignalR (default: 1 min)
+        // Extended JSInterop timeout for better reliability with Azure SignalR
         options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(3);
-        // Circuit retention for better reconnection (default: 3 min)
-        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
-        // More UI update buffer for chat apps (default: 10)
+        // Extended circuit retention period - important for sticky sessions
+        // Allows clients to reconnect to the same circuit on the same server
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(20);
+        // Higher buffer for better performance with sticky sessions
         options.MaxBufferedUnacknowledgedRenderBatches = 50;
     });
 }
@@ -45,7 +52,7 @@ else
         // JSInterop timeout optimized for Azure SignalR (default: 1 min)
         options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(3);
         // Circuit retention for better reconnection (default: 3 min)
-        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(10);
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(20);
         // More UI update buffer for chat apps (default: 10)
         options.MaxBufferedUnacknowledgedRenderBatches = 50;
     });
