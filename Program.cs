@@ -118,6 +118,9 @@ builder.Services.AddScoped<IDriftMindApiService, DriftMindApiService>();
 // Add Markdown Service
 builder.Services.AddScoped<IMarkdownService, MarkdownService>();
 
+// Add Timezone Service
+builder.Services.AddScoped<ITimezoneService, TimezoneService>();
+
 // Add SignalR Service as Singleton (configuration doesn't change at runtime)
 builder.Services.AddSingleton<ISignalRService, SignalRService>();
 

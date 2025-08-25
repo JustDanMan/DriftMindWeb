@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Forms
 @inject IDriftMindApiService ApiService
 @inject IMarkdownService MarkdownService
+@inject ITimezoneService TimezoneService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
 @rendermode InteractiveServer
@@ -202,7 +203,7 @@
                             </div>
                             <div class="message-timestamp">
                                 <i class="bi bi-clock"></i>
-                                @message.Timestamp.ToString("HH:mm")
+                                @GetFormattedTime(message.Timestamp)
                             </div>
                         </div>
                         
@@ -486,6 +487,9 @@
     {
         if (firstRender)
         {
+            // Initialize timezone service
+            await TimezoneService.InitializeAsync();
+            
             // Add welcome message only when component is fully loaded
             messages.Add(new ChatMessage
             {
@@ -1084,6 +1088,18 @@
         // });
         // StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    // Helper method to format time in user's timezone
+    private string GetFormattedTime(DateTime timestamp)
+    {
+        if (TimezoneService.IsInitialized)
+        {
+            return TimezoneService.FormatUserTime(timestamp, "HH:mm");
+        }
+        
+        // Fallback to UTC if timezone service not initialized
+        return timestamp.ToString("HH:mm") + " UTC";
     }
 
     public class ChatMessage
