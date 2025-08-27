@@ -13,7 +13,7 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 - **📄 Multi-format Support** - PDF, DOCX, TXT, and Markdown files
 - **🔍 Semantic Search** - AI-powered document search with contextual answers
 
-## � Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 - .NET 8.0 SDK
