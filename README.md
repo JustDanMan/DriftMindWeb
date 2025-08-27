@@ -81,6 +81,24 @@ DriftMindWeb/
 - **Error Handling**: Comprehensive error handling with user-friendly messages
 - **Performance**: Optimized for large document collections and frequent chat usage
 
+## 🐳 Container Images: Release and Weekly Security Rebuilds
+
+DriftMind publishes Docker images to the GitHub Container Registry (GHCR) with two complementary workflows:
+
+- On every GitHub Release, an image is built from that exact tag and pushed with:
+  - The semantic version tag (for example: `v0.0.24-alpha`)
+  - The `latest` tag
+
+- Once per week (every Monday at 02:00 UTC), a "security rebuild" is triggered that builds from the latest release commit to pick up security updates in base images. It pushes:
+  - `latest`
+  - `secbuild-YYYYMMDDHHMM` (UTC timestamp)
+
+This ensures that even if no new release is available, the container gets rebuilt regularly to incorporate upstream security fixes.
+
+### Manual Secbuild
+
+A manual run of the weekly security rebuild is possible (e.g., for critical vulnerabilities). Maintainers will trigger it as needed.
+
 ## 🔧 Installation & Setup
 
 ### Prerequisites
