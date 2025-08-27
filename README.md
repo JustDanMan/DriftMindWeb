@@ -144,6 +144,8 @@ Key endpoints for DriftMind API communication:
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
 
+**Note**: Certain branding assets in this repository are subject to additional usage restrictions. See [BRANDING.md](BRANDING.md) for more information.
+
 ---
 
 **DriftMindWeb** - Intelligent document processing made simple 🚀
