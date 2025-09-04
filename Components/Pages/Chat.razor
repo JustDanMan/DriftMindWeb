@@ -196,15 +196,25 @@
                                 @if (message.Type == "user")
                                 {
                                     <span>Sie</span>
+                                    @if (!isSearching)
+                                    {
+                                        <button class="resend-btn" 
+                                                @onclick="@(() => ResendMessage(message))"
+                                                title="Nachricht erneut senden">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    }
                                 }
                                 else
                                 {
                                     <span>DriftMind</span>
                                 }
                             </div>
-                            <div class="message-timestamp">
-                                <i class="bi bi-clock"></i>
-                                @GetFormattedTime(message.Timestamp)
+                            <div class="message-actions">
+                                <div class="message-timestamp">
+                                    <i class="bi bi-clock"></i>
+                                    @GetFormattedTime(message.Timestamp)
+                                </div>
                             </div>
                         </div>
                         
@@ -684,15 +694,49 @@
         if (isSearching || string.IsNullOrWhiteSpace(currentMessage)) return;
         
         var userMessage = currentMessage.Trim();
+        await SendMessageInternal(userMessage);
+    }
+    
+    private async Task ResendMessage(ChatMessage userMessage)
+    {
+        if (isSearching || userMessage.Type != "user") return;
+        
+        // Finde den Index der Nachricht, die erneut gesendet werden soll
+        var messageIndex = messages.FindIndex(m => m.Id == userMessage.Id);
+        if (messageIndex == -1) return;
+        
+        // Entferne alle Nachrichten nach dieser Benutzernachricht
+        var messagesToKeep = messages.Take(messageIndex + 1).ToList();
+        messages.Clear();
+        messages.AddRange(messagesToKeep);
+        
+        // Persistiere die verkürzte Chat-Historie
+        await PersistChatAsync();
+        StateHasChanged();
+        
+        // Sende die ursprüngliche Nachricht erneut
+        await SendMessageInternal(userMessage.Content);
+    }
+    
+    private async Task SendMessageInternal(string messageText)
+    {
+        if (isSearching || string.IsNullOrWhiteSpace(messageText)) return;
+        
+        // Setze currentMessage zurück falls es von der ursprünglichen SendMessage-Methode kommt
         currentMessage = "";
         
-    messages.Add(new ChatMessage
+        // Füge die Benutzernachricht nur hinzu, wenn sie nicht bereits existiert (bei Resend)
+        var existingMessage = messages.LastOrDefault(m => m.Type == "user" && m.Content == messageText.Trim());
+        if (existingMessage == null)
         {
-            Type = "user",
-            Content = userMessage,
-            Timestamp = DateTime.Now
-        });
-    await PersistChatAsync();
+            messages.Add(new ChatMessage
+            {
+                Type = "user",
+                Content = messageText.Trim(),
+                Timestamp = DateTime.Now
+            });
+            await PersistChatAsync();
+        }
         
         isSearching = true;
         StateHasChanged();
@@ -702,7 +746,7 @@
         {
             var searchRequest = new SearchRequest
             {
-                Query = userMessage,
+                Query = messageText.Trim(),
                 MaxResults = MaxSourcesForAnswer,
                 UseSemanticSearch = true,
                 IncludeAnswer = true,

@@ -252,10 +252,40 @@
     color: #4db8ff;
     display: flex;
     align-items: center;
+    gap: 0.3rem;
 }
 
 .message.user .message-sender {
     color: rgba(255, 255, 255, 0.9);
+}
+
+.message-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.resend-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0;
+    font-size: 0.7rem;
+}
+
+.message:hover .resend-btn {
+    opacity: 1;
+}
+
+.resend-btn:hover:not(:disabled) {
+    color: rgba(255, 255, 255, 0.9);
+    transform: rotate(180deg);
 }
 
 .message-timestamp {
