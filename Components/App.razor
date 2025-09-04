@@ -55,51 +55,6 @@
                 });
             }
         };
-
-        // Auto-reload if Blazor cannot reconnect the circuit
-        (function setupBlazorAutoReload(){
-            let reloading = false;
-            let reconnectTimer = null;
-            window.addEventListener('blazor:reconnectionfailed', () => {
-                if (reloading) return;
-                reloading = true;
-                // Give a short grace period, then reload
-                setTimeout(() => {
-                    try { sessionStorage.setItem('dmw.autoReload', '1'); } catch {}
-                    window.location.reload();
-                }, 500);
-            });
-
-            // Optional: if initial connect fails
-            window.addEventListener('blazor:connectionerror', () => {
-                if (reloading) return;
-                reloading = true;
-                setTimeout(() => {
-                    try { sessionStorage.setItem('dmw.autoReload', '1'); } catch {}
-                    window.location.reload();
-                }, 800);
-            });
-
-            // Fallback: if reconnect takes too long, reload
-            window.addEventListener('blazor:reconnecting', () => {
-                if (reloading) return;
-                if (reconnectTimer) clearTimeout(reconnectTimer);
-                // Wait 120s; if still not reconnected, reload
-                reconnectTimer = setTimeout(() => {
-                    if (reloading) return;
-                    reloading = true;
-                    try { sessionStorage.setItem('dmw.autoReload', '1'); } catch {}
-                    window.location.reload();
-                }, 120000);
-            });
-
-            window.addEventListener('blazor:reconnected', () => {
-                if (reconnectTimer) {
-                    clearTimeout(reconnectTimer);
-                    reconnectTimer = null;
-                }
-            });
-        })();
     </script>
 </body>
 
