@@ -32,15 +32,15 @@ namespace DriftMindWeb.Services
         {
             try
             {
-                // Erstelle einen eindeutigen Dateinamen
-                var uniqueId = Guid.NewGuid().ToString("N")[..8]; // Erste 8 Zeichen der GUID
+                // Create a unique filename
+                var uniqueId = Guid.NewGuid().ToString("N")[..8]; // First 8 characters of the GUID
                 var fileName = $"QuickNotes-{uniqueId}.txt";
                 
-                // Konvertiere Text zu Stream
+                // Convert text to stream
                 var textBytes = System.Text.Encoding.UTF8.GetBytes(text);
                 using var textStream = new MemoryStream(textBytes);
                 
-                // Verwende die bestehende UploadFileAsync Methode
+                // Use the existing UploadFileAsync method
                 return await UploadFileAsync(textStream, fileName, documentId, metadata, chunkSize, chunkOverlap);
             }
             catch (Exception ex)
@@ -102,7 +102,7 @@ namespace DriftMindWeb.Services
                 var endpoint = _configuration["DriftMindApi:Endpoints:Search"] ?? "/search";
                 var url = $"{_baseUrl}{endpoint}";
                 
-                // Debug-Logging für ChatHistory
+                // Debug logging for ChatHistory
                 if (request.ChatHistory?.Count > 0)
                 {
                     _logger.LogInformation("Sending chat history with {Count} messages to API", request.ChatHistory.Count);
@@ -286,7 +286,7 @@ namespace DriftMindWeb.Services
         {
             var contentDisposition = response.Content.Headers.ContentDisposition;
             
-            // Debug: Logge alle Content-Disposition Informationen
+            // Debug: Log all Content-Disposition information
             var contentDispHeader = response.Content.Headers.Contains("Content-Disposition") 
                 ? string.Join("; ", response.Content.Headers.GetValues("Content-Disposition"))
                 : "No Content-Disposition header found";
@@ -296,20 +296,20 @@ namespace DriftMindWeb.Services
                 contentDisposition?.FileNameStar ?? "null",
                 contentDispHeader);
             
-            // Bevorzuge FileNameStar (RFC 6266) für UTF-8 kodierte Namen, da diese meist korrekt sind
+            // Prefer FileNameStar (RFC 6266) for UTF-8 encoded names as these are usually correct
             if (!string.IsNullOrEmpty(contentDisposition?.FileNameStar))
             {
                 _logger.LogInformation("Using FileNameStar: '{FileNameStar}'", contentDisposition.FileNameStar);
                 return contentDisposition.FileNameStar;
             }
             
-            // Fallback auf FileName falls FileNameStar nicht verfügbar ist
+            // Fallback to FileName if FileNameStar is not available
             if (contentDisposition?.FileName != null)
             {
                 var fileName = contentDisposition.FileName.Trim('"');
                 _logger.LogInformation("Original FileName from header: '{OriginalFileName}'", fileName);
                 
-                // Versuche URL-Dekodierung falls der Dateiname kodiert ist
+                // Try URL decoding if the filename is encoded
                 try
                 {
                     var decodedFileName = Uri.UnescapeDataString(fileName);
@@ -329,7 +329,7 @@ namespace DriftMindWeb.Services
         }
     }
 
-    // DTOs für die API-Kommunikation
+    // DTOs for API communication
     public class FileUploadResponse
     {
         public string DocumentId { get; set; } = "";
@@ -353,7 +353,7 @@ namespace DriftMindWeb.Services
 
     public class ChatMessage
     {
-        public string Role { get; set; } = ""; // "user" oder "assistant"
+    public string Role { get; set; } = ""; // "user" or "assistant"
         public string Content { get; set; } = "";
         public DateTime Timestamp { get; set; }
     }

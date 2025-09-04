@@ -64,7 +64,7 @@
                                       id="documentText" rows="6" 
                                       placeholder="Fügen Sie hier Ihren Text ein..."></textarea>
                             
-                            <!-- Zeichenzähler -->
+                            <!-- Character counter -->
                             <div class="form-text d-flex justify-content-between">
                                 <span>
                                     @documentText.Length.ToString("N0") / @MAX_TEXT_LENGTH.ToString("N0") Zeichen
@@ -78,7 +78,7 @@
                                 }
                             </div>
                             
-                            <!-- Warnungen -->
+                            <!-- Warnings -->
                             @if (documentText.Length > WARNING_TEXT_LENGTH)
                             {
                                 <div class="alert alert-warning mt-2">
@@ -272,7 +272,7 @@
                                                 </div>
                                                 <div class="result-content">
                                                     @{
-                                                        // Teile verfügbaren Kontext gleichmäßig auf die Quellen auf
+                                                        // Split available context evenly across sources
                                                         var maxLengthPerSource = Math.Max(200, MaxContextLength / Math.Max(1, message.Results.Count));
                                                         var displayLength = Math.Min(maxLengthPerSource, result.Content.Length);
                                                         var displayContent = result.Content.Substring(0, displayLength);
@@ -701,23 +701,23 @@
     {
         if (isSearching || userMessage.Type != "user") return;
         
-        // Finde den Index der Nachricht, die erneut gesendet werden soll
+    // Find the index of the message to resend
         var messageIndex = messages.FindIndex(m => m.Id == userMessage.Id);
         if (messageIndex == -1) return;
         
-        // Entferne alle Nachrichten nach dieser Benutzernachricht
+    // Remove all messages after this user message
         var messagesToKeep = messages.Take(messageIndex + 1).ToList();
         messages.Clear();
         messages.AddRange(messagesToKeep);
         
-        // Aktualisiere lastMessageCount für korrekte Scroll-Logik
+    // Update lastMessageCount for correct scroll logic
         lastMessageCount = messages.Count;
         
-        // Persistiere die verkürzte Chat-Historie
+    // Persist the shortened chat history
         await PersistChatAsync();
         StateHasChanged();
         
-        // Sende die ursprüngliche Nachricht erneut
+    // Send the original message again
         await SendMessageInternal(userMessage.Content);
     }
     
@@ -725,10 +725,10 @@
     {
         if (isSearching || string.IsNullOrWhiteSpace(messageText)) return;
         
-        // Setze currentMessage zurück falls es von der ursprünglichen SendMessage-Methode kommt
+        // Reset currentMessage if coming from the original SendMessage method
         currentMessage = "";
         
-        // Füge die Benutzernachricht nur hinzu, wenn sie nicht bereits existiert (bei Resend)
+        // Add the user message only if it doesn't already exist (on resend)
         var existingMessage = messages.LastOrDefault(m => m.Type == "user" && m.Content == messageText.Trim());
         if (existingMessage == null)
         {
@@ -740,14 +740,14 @@
             });
             await PersistChatAsync();
             
-            // Für neue Nachrichten nach unten scrollen
+            // Scroll to bottom for new messages
             isSearching = true;
             StateHasChanged();
             await ScrollToBottom();
         }
         else
         {
-            // Für Resend nicht scrollen, warten auf AI-Antwort
+            // For resend don't scroll, wait for AI response
             isSearching = true;
             StateHasChanged();
         }

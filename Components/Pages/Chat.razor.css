@@ -71,7 +71,7 @@
     width: 100%;
 }
 
-/* Wenn nur ein Button da ist, soll er links bleiben */
+/* If there's only one button, keep it left-aligned */
 .upload-buttons:has(button:only-child) {
     justify-content: flex-start;
 }
@@ -85,24 +85,24 @@
     margin-bottom: 1.5rem;
     display: flex;
     gap: 0.5rem;
-    height: 38px; /* Feste Höhe für Stabilität */
-    align-items: stretch; /* Alle Buttons gleich hoch */
+    height: 38px; /* Fixed height for stability */
+    align-items: stretch; /* All buttons same height */
 }
 
 .upload-tabs .btn {
     border-radius: 8px;
     font-weight: 500;
-    /* Stabilisierte Transition ohne Transform */
+    /* Stabilized transition without transform */
     transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, color 0.2s ease-in-out;
-    transform: none !important; /* Verhindert das Springen */
-    min-height: 38px; /* Feste Mindesthöhe */
+    transform: none !important; /* Prevents jumping */
+    min-height: 38px; /* Fixed minimum height */
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .upload-tabs .btn:hover {
-    transform: none !important; /* Keine Bewegung bei Hover */
+    transform: none !important; /* No movement on hover */
 }
 
 .upload-tabs .btn i {
@@ -242,7 +242,7 @@
     font-size: 0.85rem;
 }
 
-/* Bessere Sichtbarkeit des Trennstrichs in User-Nachrichten */
+/* Better visibility of the separator in user messages */
 .message.user .message-header {
     border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
@@ -411,16 +411,16 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    text-decoration: none; /* Für <a> Tags */
+    text-decoration: none; /* For <a> tags */
 }
 
 .download-btn:hover {
     transform: translateY(-1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    text-decoration: none; /* Für <a> Tags */
+    text-decoration: none; /* For <a> tags */
 }
 
-/* Spezielle Styles für Download-bereit Zustand */
+/* Special styles for download-ready state */
 .download-btn.btn-success:hover {
     background-color: #198754;
     border-color: #198754;
@@ -497,7 +497,7 @@
     }
 }
 
-/* Styling für Typing-Bubble (während des Ladens) */
+/* Styling for typing bubble (while loading) */
 .typing-bubble {
     opacity: 0.8;
 }
@@ -508,7 +508,7 @@
 }
 
 .typing-header .message-timestamp {
-    display: none; /* Verstecke Uhrzeit während des Tippens */
+    display: none; /* Hide timestamp while typing */
 }
 
 /* Chat Input */

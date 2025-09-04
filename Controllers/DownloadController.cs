@@ -17,11 +17,11 @@ namespace DriftMindWeb.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Generiert einen sicheren Download-Token für ein Dokument
-        /// </summary>
-        /// <param name="request">Token-Anfrage mit Dokument-ID</param>
-        /// <returns>Download-Token Response</returns>
+    /// <summary>
+    /// Generates a secure download token for a document
+    /// </summary>
+    /// <param name="request">Token request with document ID</param>
+    /// <returns>Download token response</returns>
         [HttpPost("token")]
         public async Task<IActionResult> GetDownloadToken([FromBody] GetDownloadTokenRequest request)
         {
@@ -32,7 +32,7 @@ namespace DriftMindWeb.Controllers
                     return BadRequest(new { success = false, message = "DocumentId ist erforderlich" });
                 }
 
-                // Validierung der Expiration-Zeit (max 60 Minuten für Sicherheit)
+                // Validate expiration time (max 60 minutes for safety)
                 var expirationMinutes = Math.Min(request.ExpirationMinutes, 60);
                 if (expirationMinutes < 1) expirationMinutes = 15; // Default
 
@@ -63,11 +63,11 @@ namespace DriftMindWeb.Controllers
             }
         }
 
-        /// <summary>
-        /// Lädt eine Datei über einen sicheren Token herunter
-        /// </summary>
-        /// <param name="request">Download-Anfrage mit Token</param>
-        /// <returns>Datei zum Download</returns>
+    /// <summary>
+    /// Downloads a file using a secure token
+    /// </summary>
+    /// <param name="request">Download request with token</param>
+    /// <returns>File for download</returns>
         [HttpPost("file")]
         public async Task<IActionResult> DownloadFile([FromBody] DownloadFileRequest request)
         {
@@ -84,20 +84,20 @@ namespace DriftMindWeb.Controllers
                 {
                     _logger.LogInformation("File downloaded successfully: {FileName}", downloadResponse.FileName);
                     
-                    // Setze Content-Type Header
+                    // Set Content-Type header
                     Response.ContentType = downloadResponse.ContentType ?? "application/octet-stream";
                     
-                    // Setze den Content-Disposition Header mit UTF-8 Encoding für korrekte Umlaute
+                    // Set the Content-Disposition header with UTF-8 encoding for correct umlauts
                     if (!string.IsNullOrEmpty(downloadResponse.FileName))
                     {
-                        // RFC 6266 konforme Encoding für Dateinamen mit Umlauten
-                        // Erstelle ASCII-Version als Fallback für ältere Browser
+                        // RFC 6266 compliant encoding for filenames with umlauts
+                        // Create ASCII version as fallback for older browsers
                         var asciiFileName = downloadResponse.FileName
                             .Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue")
                             .Replace("Ä", "Ae").Replace("Ö", "Oe").Replace("Ü", "Ue")
                             .Replace("ß", "ss");
                         
-                        // Setze beide Header-Varianten für maximale Kompatibilität
+                        // Set both header variants for maximum compatibility
                         Response.Headers["Content-Disposition"] = 
                             $"attachment; filename=\"{asciiFileName}\"; filename*=UTF-8''{Uri.EscapeDataString(downloadResponse.FileName)}";
                     }
@@ -106,7 +106,7 @@ namespace DriftMindWeb.Controllers
                         Response.Headers["Content-Disposition"] = "attachment";
                     }
                     
-                    // Rückgabe der Datei-Bytes direkt
+                    // Return the file bytes directly
                     return File(downloadResponse.FileBytes, Response.ContentType);
                 }
                 else
@@ -122,11 +122,11 @@ namespace DriftMindWeb.Controllers
             }
         }
 
-        /// <summary>
-        /// Alternative GET-Endpoint für direkten Download via URL mit Token als Query Parameter
-        /// </summary>
-        /// <param name="token">Download-Token</param>
-        /// <returns>Datei zum Download</returns>
+    /// <summary>
+    /// Alternative GET endpoint for direct download via URL with token as query parameter
+    /// </summary>
+    /// <param name="token">Download token</param>
+    /// <returns>File for download</returns>
         [HttpGet("file")]
         public async Task<IActionResult> DownloadFileViaGet([FromQuery] string token)
         {
@@ -143,20 +143,20 @@ namespace DriftMindWeb.Controllers
                 {
                     _logger.LogInformation("File downloaded successfully via GET: {FileName}", downloadResponse.FileName);
                     
-                    // Setze Content-Type Header
+                    // Set Content-Type header
                     Response.ContentType = downloadResponse.ContentType ?? "application/octet-stream";
                     
-                    // Setze den Content-Disposition Header mit UTF-8 Encoding für korrekte Umlaute
+                    // Set the Content-Disposition header with UTF-8 encoding for correct umlauts
                     if (!string.IsNullOrEmpty(downloadResponse.FileName))
                     {
-                        // RFC 6266 konforme Encoding für Dateinamen mit Umlauten
-                        // Erstelle ASCII-Version als Fallback für ältere Browser
+                        // RFC 6266 compliant encoding for filenames with umlauts
+                        // Create ASCII version as fallback for older browsers
                         var asciiFileName = downloadResponse.FileName
                             .Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue")
                             .Replace("Ä", "Ae").Replace("Ö", "Oe").Replace("Ü", "Ue")
                             .Replace("ß", "ss");
                         
-                        // Setze beide Header-Varianten für maximale Kompatibilität
+                        // Set both header variants for maximum compatibility
                         Response.Headers["Content-Disposition"] = 
                             $"attachment; filename=\"{asciiFileName}\"; filename*=UTF-8''{Uri.EscapeDataString(downloadResponse.FileName)}";
                     }
@@ -165,7 +165,7 @@ namespace DriftMindWeb.Controllers
                         Response.Headers["Content-Disposition"] = "attachment";
                     }
                     
-                    // Rückgabe der Datei-Bytes direkt
+                    // Return the file bytes directly
                     return File(downloadResponse.FileBytes, Response.ContentType);
                 }
                 else

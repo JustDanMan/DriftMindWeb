@@ -10,7 +10,7 @@
 }
 else if (!string.IsNullOrEmpty(DownloadUrl))
 {
-    <!-- Rein Blazor/HTML-native Download-Link -->
+    <!-- Pure Blazor/HTML-native download link -->
     <a href="@DownloadUrl" 
        target="_blank"
        class="btn btn-success btn-sm download-btn"
@@ -49,15 +49,15 @@ else
 
         try
         {
-            // Token generieren
+            // Generate token
             var tokenResponse = await ApiService.GetDownloadTokenAsync(DocumentId, 15);
             
             if (tokenResponse?.Success == true)
             {
-                // Download-URL bereitstellen
+                // Provide download URL
                 DownloadUrl = $"/api/download/file?token={Uri.EscapeDataString(tokenResponse.Token)}";
                 
-                // Auto-Cleanup nach 15 Minuten
+                // Auto-cleanup after 15 minutes
                 ExpirationTimer?.Dispose();
                 ExpirationTimer = new Timer((_) => {
                     DownloadUrl = null;

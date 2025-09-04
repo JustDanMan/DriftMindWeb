@@ -558,15 +558,15 @@
 
     private Task HandleDownloadError(string error)
     {
-        // Hier könnten Sie eine Benachrichtigung anzeigen oder einen Toast verwenden
-        // Für jetzt loggen wir einfach zur Konsole
+    // Here you could show a notification or use a toast
+    // For now we just log to the console
         Console.WriteLine($"Download-Fehler: {error}");
         return Task.CompletedTask;
     }
 
     private Task HandleDownloadSuccess(string? fileName)
     {
-        // Optional: Success-Feedback anzeigen
+    // Optional: Display success feedback
         Console.WriteLine($"Download gestartet: {fileName ?? "Dokument"}");
         return Task.CompletedTask;
     }
