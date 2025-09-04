@@ -710,6 +710,9 @@
         messages.Clear();
         messages.AddRange(messagesToKeep);
         
+        // Aktualisiere lastMessageCount für korrekte Scroll-Logik
+        lastMessageCount = messages.Count;
+        
         // Persistiere die verkürzte Chat-Historie
         await PersistChatAsync();
         StateHasChanged();
@@ -736,11 +739,18 @@
                 Timestamp = DateTime.Now
             });
             await PersistChatAsync();
+            
+            // Für neue Nachrichten nach unten scrollen
+            isSearching = true;
+            StateHasChanged();
+            await ScrollToBottom();
         }
-        
-        isSearching = true;
-        StateHasChanged();
-        await ScrollToBottom(); // For user messages keep ScrollToBottom
+        else
+        {
+            // Für Resend nicht scrollen, warten auf AI-Antwort
+            isSearching = true;
+            StateHasChanged();
+        }
         
         try
         {
