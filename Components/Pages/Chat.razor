@@ -6,6 +6,7 @@
 @inject ITimezoneService TimezoneService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
+@inject ProtectedSessionStorage ProtectedSessionStorage
 @rendermode InteractiveServer
 
 <PageTitle>DriftMind Chat</PageTitle>
@@ -490,17 +491,49 @@
             // Initialize timezone service
             await TimezoneService.InitializeAsync();
             
-            // Add welcome message only when component is fully loaded
-            messages.Add(new ChatMessage
+            // Try restore chat history from protected storage
+            try
             {
-                Type = "assistant",
-                Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-                Timestamp = DateTime.Now
-            });
+                var stored = await ProtectedSessionStorage.GetAsync<List<ChatMessage>>(ChatStorageKey);
+                if (stored.Success && stored.Value != null && stored.Value.Count > 1)
+                {
+                    // Restore only if there is more than the welcome message
+                    messages = stored.Value;
+                }
+                else
+                {
+                    // Always create a fresh welcome message if there is nothing else
+                    messages.Add(new ChatMessage
+                    {
+                        Type = "assistant",
+                        Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+                        Timestamp = DateTime.Now
+                    });
+                    // Do not persist welcome-only state
+                    if (stored.Success && stored.Value != null && stored.Value.Count <= 1)
+                    {
+                        // Clean up potential stale storage with only welcome
+                        await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback: ensure at least welcome message exists
+                if (messages.Count == 0)
+                {
+                    messages.Add(new ChatMessage
+                    {
+                        Type = "assistant",
+                        Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+                        Timestamp = DateTime.Now
+                    });
+                }
+            }
             
             lastMessageCount = messages.Count;
             StateHasChanged(); // Update UI
-            await ScrollToNewMessage(); // Scroll to message
+            await ScrollToBottom(); // After load/restore scroll to bottom
         }
     }
 
@@ -529,6 +562,7 @@
                 Content = $"Die ausgewählte Datei ist zu groß. Das Maximum sind {MaxUploadSizeMB}MB.",
                 Timestamp = DateTime.Now
             });
+            await PersistChatAsync();
             selectedFile = null;
             StateHasChanged();
             await ScrollToNewMessage();
@@ -547,6 +581,7 @@
                 Content = $"Dateiformat '{fileExtension}' wird nicht unterstützt. Erlaubte Formate: .txt, .md, .pdf, .docx",
                 Timestamp = DateTime.Now
             });
+            await PersistChatAsync();
             selectedFile = null;
             StateHasChanged();
             await ScrollToNewMessage();
@@ -584,6 +619,7 @@
                         Content = $"Text erfolgreich als Datei hochgeladen! Dateiname: {response.FileName}, Dokument-ID: {response.DocumentId}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
                         Timestamp = DateTime.Now
                     });
+                    await PersistChatAsync();
                 }
                 else
                 {
@@ -593,6 +629,7 @@
                         Content = "Fehler beim Hochladen des Textes. Bitte überprüfen Sie, ob die DriftMind API läuft und erreichbar ist.",
                         Timestamp = DateTime.Now
                     });
+                    await PersistChatAsync();
                 }
             }
             else if (selectedFile != null)
@@ -649,12 +686,13 @@
         var userMessage = currentMessage.Trim();
         currentMessage = "";
         
-        messages.Add(new ChatMessage
+    messages.Add(new ChatMessage
         {
             Type = "user",
             Content = userMessage,
             Timestamp = DateTime.Now
         });
+    await PersistChatAsync();
         
         isSearching = true;
         StateHasChanged();
@@ -693,6 +731,7 @@
                 };
                 
                 messages.Add(chatMessage);
+                await PersistChatAsync();
                 
                 // Load filenames for all unique DocumentIds
                 if (chatMessage.Results?.Count > 0)
@@ -716,6 +755,7 @@
                     Content = "Entschuldigung, ich konnte keine Antwort auf Ihre Frage finden. Stellen Sie sicher, dass Sie relevante Dokumente hochgeladen haben.",
                     Timestamp = DateTime.Now
                 });
+                await PersistChatAsync();
             }
         }
         catch (Exception ex)
@@ -726,6 +766,7 @@
                 Content = $"Ein Fehler ist aufgetreten: {ex.Message}",
                 Timestamp = DateTime.Now
             });
+            await PersistChatAsync();
         }
         finally
         {
@@ -871,25 +912,18 @@
 
     private async Task ClearChatHistory()
     {
-        // Keep only first welcome message
-        var welcomeMessage = messages.FirstOrDefault();
+        // Always create a fresh welcome message (new timestamp)
         messages.Clear();
-        
-        if (welcomeMessage != null)
+        messages.Add(new ChatMessage
         {
-            messages.Add(welcomeMessage);
-        }
-        else
-        {
-            // Fallback: Create new welcome message
-            messages.Add(new ChatMessage
-            {
-                Type = "assistant",
-                Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-                Timestamp = DateTime.Now
-            });
-        }
-        
+            Type = "assistant",
+            Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+            Timestamp = DateTime.Now
+        });
+
+        // Clear persisted history so only-welcome is not saved
+        await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+
         StateHasChanged();
         await ScrollToNewMessage();
     }
@@ -999,6 +1033,7 @@
                     Content = $"Datei '{response.FileName}' erfolgreich hochgeladen! Dokument-ID: {response.DocumentId}. Dateigröße: {FormatFileSize(response.FileSizeBytes)}. Es wurden {response.ChunksCreated} Chunks erstellt. Sie können jetzt Fragen zu diesem Inhalt stellen.",
                     Timestamp = DateTime.Now
                 });
+                await PersistChatAsync();
                 return true;
             }
             else
@@ -1009,6 +1044,7 @@
                     Content = "Fehler beim Hochladen der Datei. Bitte überprüfen Sie, ob die DriftMind API läuft und erreichbar ist.",
                     Timestamp = DateTime.Now
                 });
+                await PersistChatAsync();
                 return false;
             }
         }
@@ -1020,6 +1056,7 @@
                 Content = $"Fehler beim Hochladen der Datei: {ex.Message}",
                 Timestamp = DateTime.Now
             });
+            await PersistChatAsync();
             return false;
         }
     }
@@ -1065,7 +1102,7 @@
         StateHasChanged();
     }
 
-    private Task HandleDownloadError(string error)
+    private async Task HandleDownloadError(string error)
     {
         messages.Add(new ChatMessage
         {
@@ -1074,7 +1111,8 @@
             Timestamp = DateTime.Now
         });
         StateHasChanged();
-        return Task.CompletedTask;
+    await PersistChatAsync();
+    return;
     }
 
     private Task HandleDownloadSuccess(string? fileName)
@@ -1119,5 +1157,26 @@
         public double Score { get; set; }
         public string? OriginalFileName { get; set; }
         public bool IsFileAvailable { get; set; }
+    }
+
+    // Persistence helpers
+    private const string ChatStorageKey = "dmw.chat.messages.v1";
+    private async Task PersistChatAsync()
+    {
+        try
+        {
+            // Do not persist when only the welcome message exists
+            if (messages == null || messages.Count <= 1)
+            {
+                await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                return;
+            }
+
+            await ProtectedSessionStorage.SetAsync(ChatStorageKey, messages);
+        }
+        catch
+        {
+            // Ignore persistence errors
+        }
     }
 }

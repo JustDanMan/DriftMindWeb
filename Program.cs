@@ -2,6 +2,7 @@ using DriftMindWeb.Components;
 using DriftMindWeb.Services;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -111,6 +112,8 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
+
+// Protected Browser Storage is available via package; no explicit registration needed in .NET 8 Razor Components
 
 // Add DriftMind API Service
 builder.Services.AddScoped<IDriftMindApiService, DriftMindApiService>();
