@@ -2,7 +2,7 @@
     "name": "DriftMindWeb",
     "short_name": "DriftMind",
     "description": "AI-powered document processing and search application",
-    "start_url": "/",
+    "start_url": "/chat",
     "scope": "/",
     "display": "standalone",
     "background_color": "#0f0f0f",
