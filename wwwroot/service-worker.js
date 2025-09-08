@@ -16,7 +16,7 @@ const PRECACHE_ASSETS = [
   '/bootstrap/bootstrap.min.css',
   '/favicon.png',
   '/favicon.ico',
-  '/favicon-simple.svg',
+  '/favicon.svg',
   '/site.webmanifest'
 ];
 
