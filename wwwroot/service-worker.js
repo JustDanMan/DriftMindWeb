@@ -4,7 +4,7 @@
   - Shows offline.html on navigation requests when the network is unavailable
 */
 
-const CACHE_VERSION = 'dmw-pwa-v1';
+const CACHE_VERSION = 'dmw-pwa-v2';
 const STATIC_CACHE = `static-${CACHE_VERSION}`;
 
 // Keep this list small and only include static, fingerprinted or stable assets
