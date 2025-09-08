@@ -3,9 +3,10 @@
     "short_name": "DriftMind",
     "description": "AI-powered document processing and search application",
     "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "background_color": "#1a1a1a",
-    "theme_color": "#4db8ff",
+    "background_color": "#0f0f0f",
+    "theme_color": "#0f0f0f",
     "orientation": "portrait-primary",
     "icons": [
         {

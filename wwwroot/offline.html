@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline – DriftMindWeb</title>
+    <link rel="stylesheet" href="/bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" href="/app.css" />
+    <meta name="theme-color" content="#4db8ff" />
+  </head>
+  <body class="d-flex align-items-center" style="min-height:100vh;background-color:#0f0f0f;">
+    <main class="container">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+          <div class="card shadow-sm" style="background-color:#1f1f1f;border:1px solid #374151;color:#e5e7eb;">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center mb-3">
+                <img src="/favicon.png" alt="DriftMind" width="32" height="32" class="me-2" />
+                <h1 class="h4 m-0">DriftMindWeb</h1>
+              </div>
+              <h2 class="h5" style="color:#ffffff;">Du bist offline</h2>
+              <p class="text-muted mb-3" style="color:#9ca3af !important;">
+                Diese Anwendung läuft mit Blazor Server. Ohne Netzwerkverbindung können keine Daten geladen werden.
+              </p>
+              <ul class="text-muted small">
+                <li>Prüfe deine Internetverbindung.</li>
+                <li>Versuche es in ein paar Sekunden erneut.</li>
+                <li>Wenn du die App installiert hast (PWA), öffne sie erneut, sobald du wieder online bist.</li>
+              </ul>
+              <button class="btn btn-primary" onclick="location.reload()">Erneut versuchen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+  </html>
