@@ -12,7 +12,7 @@
 <PageTitle>DriftMind Chat</PageTitle>
 
 <div class="chat-container">
-    <div class="chat-header">
+    <div class="chat-header @(ShouldHideHeader ? "hidden" : "")">
         <h2>
             <i class="bi bi-chat-dots"></i>
             DriftMind AI Assistant
@@ -414,6 +414,9 @@
     
     // Scroll management
     private int lastMessageCount = 0;
+
+    // Hide intro header after first user message
+    private bool ShouldHideHeader => messages.Any(m => m.Type == "user");
     
     // Configurable chat parameters
     private int MaxSourcesForAnswer => Configuration.GetValue<int>("ChatService:MaxSourcesForAnswer", 5);
