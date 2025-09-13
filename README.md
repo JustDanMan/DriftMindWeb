@@ -146,6 +146,17 @@ This project is licensed under the MIT License. See [LICENSE](LICENSE) for detai
 
 **Note**: Certain branding assets in this repository are subject to additional usage restrictions. See [BRANDING.md](BRANDING.md) for more information.
 
+## 📦 Third-Party Packages
+
+The following third-party packages are used in this project. Their respective licenses apply to those components. The overall project license remains MIT as noted above.
+
+| Package | Version | License | Copyright |
+|---------|---------|---------|-----------|
+| Azure.Extensions.AspNetCore.DataProtection.Blobs | 1.3.4 | MIT | © Microsoft Corporation |
+| Azure.Storage.Blobs | 12.22.1 | MIT | © Microsoft Corporation |
+| Markdig | 0.41.3 | BSD-2-Clause | © Alexandre Mutel |
+| Microsoft.Azure.SignalR | 1.28.0 | MIT | © Microsoft Corporation |
+
 ---
 
 **DriftMindWeb** - Intelligent document processing made simple 🚀
