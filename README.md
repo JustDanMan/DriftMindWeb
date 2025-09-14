@@ -154,8 +154,8 @@ The following third-party packages are used in this project. Their respective li
 |---------|---------|---------|-----------|
 | Azure.Extensions.AspNetCore.DataProtection.Blobs | 1.3.4 | MIT | © Microsoft Corporation |
 | Azure.Storage.Blobs | 12.22.1 | MIT | © Microsoft Corporation |
-| Markdig | 0.42.0 | BSD-2-Clause | © Alexandre Mutel |
 | Microsoft.Azure.SignalR | 1.28.0 | MIT | © Microsoft Corporation |
+| Markdig | 0.42.0 | BSD-2-Clause | © Alexandre Mutel |
 
 Full license texts: see [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
 
