@@ -257,7 +257,7 @@
                                                         </span>
                                                         <span class="result-meta">
                                                             <i class="bi bi-file-text"></i>
-                                                            @GetDisplayFileName(result.DocumentId) | Chunk @result.ChunkIndex
+                                                            @(result.OriginalFileName ?? result.DocumentId) | Chunk @result.ChunkIndex
                                                         </span>
                                                     </div>
                                                     @if (result.IsFileAvailable || !string.IsNullOrEmpty(result.OriginalFileName))
@@ -409,8 +409,6 @@
     private string? duplicateFileName = null;
     private string? existingDocumentId = null;
     
-    // Cache for DocumentId -> FileName mapping
-    private Dictionary<string, string> documentNameCache = new();
     
     // Scroll management
     private int lastMessageCount = 0;
@@ -790,19 +788,7 @@
                 messages.Add(chatMessage);
                 await PersistChatAsync();
                 
-                // Load filenames for all unique DocumentIds
-                if (chatMessage.Results?.Count > 0)
-                {
-                    var uniqueDocumentIds = chatMessage.Results.Select(r => r.DocumentId).Distinct().ToList();
-                    _ = Task.Run(async () =>
-                    {
-                        foreach (var docId in uniqueDocumentIds)
-                        {
-                            await GetDocumentFileName(docId);
-                        }
-                        await InvokeAsync(StateHasChanged);
-                    });
-                }
+                // Filenamen werden direkt aus OriginalFileName der Results angezeigt; kein Nachladen nötig
             }
             else
             {
@@ -1002,43 +988,7 @@
         return $"{size:F1} {suffixes[suffixIndex]}";
     }
 
-    private async Task<string> GetDocumentFileName(string documentId)
-    {
-        // Check cache first
-        if (documentNameCache.TryGetValue(documentId, out var cachedName))
-        {
-            return cachedName;
-        }
-
-        try
-        {
-            // Load document info from API
-            var response = await ApiService.GetDocumentsAsync(1, 0, documentId);
-            if (response?.Success == true && response.Documents.Count > 0)
-            {
-                var document = response.Documents[0];
-                var fileName = !string.IsNullOrEmpty(document.FileName) ? document.FileName : documentId;
-                
-                // Cache the result
-                documentNameCache[documentId] = fileName;
-                return fileName;
-            }
-        }
-        catch (Exception)
-        {
-            // On error use DocumentId as fallback
-        }
-
-        // Fallback: use DocumentId
-        documentNameCache[documentId] = documentId;
-        return documentId;
-    }
-
-    private string GetDisplayFileName(string documentId)
-    {
-        // Use cache or DocumentId as fallback
-        return documentNameCache.TryGetValue(documentId, out var cachedName) ? cachedName : documentId;
-    }
+    
 
     private async Task<(bool exists, string? documentId)> CheckFileExists(string fileName)
     {
