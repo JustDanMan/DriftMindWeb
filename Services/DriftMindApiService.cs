@@ -422,7 +422,6 @@ namespace DriftMindWeb.Services
     public class DocumentListResponse
     {
         public List<DocumentInfo> Documents { get; set; } = new();
-        public int TotalDocuments { get; set; }
         public int ReturnedDocuments { get; set; }
         public bool Success { get; set; }
         public string Message { get; set; } = "";
