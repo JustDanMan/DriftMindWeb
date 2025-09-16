@@ -41,9 +41,7 @@
             <div class="col-md-6 text-end">
                 @if (documents?.Count > 0)
                 {
-                    <span class="text-muted">
-                        @documents.Count von @totalDocuments Dokumenten
-                    </span>
+                    <span class="text-muted">@documents.Count Dokumente</span>
                 }
             </div>
         </div>
@@ -271,34 +269,23 @@
         }
     </div>
 
-    <!-- Pagination -->
-    @if (totalDocuments > maxResults)
+    <!-- Progressive Loading -->
+    @if (hasMore)
     {
-        <div class="pagination-section">
-            <nav aria-label="Document pagination">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
-                        <button class="page-link" @onclick="() => ChangePage(currentPage - 1)" disabled="@(currentPage <= 1 || isLoading)">
-                            Vorherige
-                        </button>
-                    </li>
-                    
-                    @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-                    {
-                        <li class="page-item @(i == currentPage ? "active" : "")">
-                            <button class="page-link" @onclick="() => ChangePage(i)" disabled="@isLoading">
-                                @i
-                            </button>
-                        </li>
-                    }
-                    
-                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
-                        <button class="page-link" @onclick="() => ChangePage(currentPage + 1)" disabled="@(currentPage >= totalPages || isLoading)">
-                            Nächste
-                        </button>
-                    </li>
-                </ul>
-            </nav>
+        <div class="pagination-section text-center">
+            <button id="loadMoreButton" class="btn btn-outline-primary" @onclick="LoadMore" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    <text>Lädt...</text>
+                }
+                else
+                {
+                    <i class="bi bi-plus-circle me-2"></i>
+                    <text>Mehr laden</text>
+                }
+            </button>
+            <div id="infiniteScrollSentinel" style="height:1px;"></div>
         </div>
     }
 </div>
@@ -342,7 +329,6 @@
 
 @code {
     private List<DocumentInfo>? documents;
-    private int totalDocuments = 0;
     private int currentPage = 1;
     private int maxResults = 50;
     private string? documentIdFilter;
@@ -354,14 +340,16 @@
     // Configuration values
     private int skeletonCardCount;
     private int initialPageSize;
+    private bool hasMore;
 
-    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)totalDocuments / maxResults));
+    // Keine klassischen Seiten mehr – totalPages entfällt
 
     protected override void OnInitialized()
     {
-        // Load configuration values
+    // Load configuration values
         skeletonCardCount = Configuration.GetValue<int>("DocumentsPage:SkeletonCardCount", 3);
         initialPageSize = Configuration.GetValue<int>("DocumentsPage:InitialPageSize", 50);
+        // Progressive Loading ist immer aktiv
         maxResults = initialPageSize;
 
         // Initialize with loading state - page appears immediately
@@ -375,6 +363,15 @@
         {
             // Load data after first render for immediate UI feedback
             await LoadDocuments();
+        }
+        // (Re-)Initialisiere den IntersectionObserver nach jedem Render, wenn mehr geladen werden kann
+        if (hasMore)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("InfiniteScroll.init", "infiniteScrollSentinel", "loadMoreButton");
+            }
+            catch { }
         }
     }
 
@@ -395,20 +392,37 @@
             
             if (response != null && response.Success)
             {
-                documents = response.Documents;
-                totalDocuments = response.TotalDocuments;
+                var newDocs = response.Documents ?? new List<DocumentInfo>();
+                var returned = response.ReturnedDocuments > 0 ? response.ReturnedDocuments : newDocs.Count;
+
+                if (currentPage > 1 && documents != null && documents.Count > 0)
+                {
+                    // Vermeide Duplikate anhand DocumentId
+                    var existingIds = new HashSet<string>(documents.Select(d => d.DocumentId));
+                    foreach (var d in newDocs)
+                    {
+                        if (!existingIds.Contains(d.DocumentId))
+                            documents.Add(d);
+                    }
+                }
+                else
+                {
+                    documents = newDocs;
+                }
+                // Progressive Loading: Es gibt mehr, wenn genau maxResults zurückkamen
+                hasMore = returned == maxResults;
             }
             else
             {
                 documents = new List<DocumentInfo>();
-                totalDocuments = 0;
+                hasMore = false;
             }
         }
         catch (Exception)
         {
             // Handle error
             documents = new List<DocumentInfo>();
-            totalDocuments = 0;
+            hasMore = false;
         }
         finally
         {
@@ -420,6 +434,7 @@
     private async Task ApplyFilter()
     {
         currentPage = 1;
+    // Progressive Loading: kein Total nötig
         await LoadDocuments();
     }
 
@@ -428,16 +443,28 @@
         documentIdFilter = null;
         showFilter = false;
         currentPage = 1;
+    // Progressive Loading: kein Total nötig
         await LoadDocuments();
     }
 
-    private async Task ChangePage(int page)
+    // Klassische Pagination entfernt
+
+    private async Task LoadMore()
     {
-        if (page >= 1 && page <= totalPages && page != currentPage)
+        if (isLoading)
+            return;
+
+        currentPage++;
+        await LoadDocuments();
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        try
         {
-            currentPage = page;
-            await LoadDocuments();
+            await JSRuntime.InvokeVoidAsync("InfiniteScroll.dispose", "infiniteScrollSentinel");
         }
+        catch { }
     }
 
     private void ConfirmDelete(string documentId)
@@ -469,7 +496,6 @@
                 if (documents != null)
                 {
                     documents.RemoveAll(d => d.DocumentId == documentIdToDelete);
-                    totalDocuments--;
                 }
                 documentToDelete = null;
                 
