@@ -10,7 +10,7 @@
     <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.1" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
     <PackageReference Include="Markdig" Version="0.42.0" />
-    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.28.0" />
+    <PackageReference Include="Microsoft.Azure.SignalR" Version="1.32.0" />
   </ItemGroup>
 
 </Project>
