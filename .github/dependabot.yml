@@ -31,12 +31,26 @@ updates:
         update-types:
           - "minor"
           - "patch"
+      # Group Azure SDK libraries
+      azure-sdk:
+        patterns:
+          - "Azure.*"
+        update-types:
+          - "minor"
+          - "patch"
       # Group ASP.NET Core 8 packages (framework updates)
       aspnetcore-framework:
         patterns:
           - "Microsoft.AspNetCore.*"
           - "Microsoft.Extensions.*"
         update-types:
+          - "patch"
+      # Group SignalR packages
+      signalr:
+        patterns:
+          - "Microsoft.Azure.SignalR*"
+        update-types:
+          - "minor"
           - "patch"
 
   # GitHub Actions workflows
