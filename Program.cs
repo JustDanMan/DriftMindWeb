@@ -18,7 +18,10 @@ if (isAzureSignalRValid)
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 
-    builder.Services.AddSignalR()
+    builder.Services.AddSignalR(options =>
+        {
+            options.MaximumReceiveMessageSize = 1024 * 1024; // 1MB message size limit
+        })
         .AddAzureSignalR(options =>
         {
             options.ConnectionString = connectionString;
@@ -45,6 +48,11 @@ else
     // Use default SignalR (in-memory) for single instance
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
+
+    builder.Services.AddSignalR(options =>
+    {
+        options.MaximumReceiveMessageSize = 1024 * 1024; // 1MB message size limit
+    });
         
     // Configure Circuit options for local SignalR
     builder.Services.Configure<Microsoft.AspNetCore.Components.Server.CircuitOptions>(options =>
