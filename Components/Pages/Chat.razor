@@ -749,20 +749,25 @@
         StateHasChanged();
         
     // Send the original message again
-        await SendMessageInternal(userMessage.Content);
+        await SendMessageInternal(userMessage.Content, isResend: true);
     }
     
-    private async Task SendMessageInternal(string messageText)
+    private async Task SendMessageInternal(string messageText, bool isResend = false)
     {
         if (isSearching || string.IsNullOrWhiteSpace(messageText)) return;
         
         // Reset currentMessage if coming from the original SendMessage method
         currentMessage = "";
         
-        // Add the user message only if it doesn't already exist (on resend)
-        var existingMessage = messages.LastOrDefault(m => m.Type == "user" && m.Content == messageText.Trim());
-        if (existingMessage == null)
+        if (isResend)
         {
+            // On resend, do not append an additional identical user bubble
+            isSearching = true;
+            StateHasChanged();
+        }
+        else
+        {
+            // Normal send: identical texts are allowed and will be displayed
             messages.Add(new ChatMessage
             {
                 Type = "user",
@@ -775,12 +780,6 @@
             isSearching = true;
             StateHasChanged();
             await ScrollToBottom();
-        }
-        else
-        {
-            // For resend don't scroll, wait for AI response
-            isSearching = true;
-            StateHasChanged();
         }
         
         try
