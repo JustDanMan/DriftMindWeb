@@ -336,7 +336,7 @@
             </div>
         }
         <div class="input-group">
-            <input @bind="currentMessage" @onkeypress="HandleKeyPress" type="text" class="form-control" 
+            <input @bind="currentMessage" @bind:event="oninput" @onkeydown="HandleKeyDown" type="text" class="form-control" 
                    placeholder="Stellen Sie eine Frage zu Ihren Dokumenten..." disabled="@isSearching">
             <button class="btn btn-primary" @onclick="SendMessage" disabled="@(isSearching || string.IsNullOrWhiteSpace(currentMessage))">
                 @if (isSearching)
@@ -682,11 +682,14 @@
         showUpload = false;
     }
 
-    private async Task HandleKeyPress(KeyboardEventArgs e)
+    private async Task HandleKeyDown(KeyboardEventArgs e)
     {
-        if (e.Key == "Enter" && !isSearching && !string.IsNullOrWhiteSpace(currentMessage))
+        if (e.Key == "Enter" && !e.ShiftKey)
         {
-            await SendMessage();
+            if (!isSearching && !string.IsNullOrWhiteSpace(currentMessage))
+            {
+                await SendMessage();
+            }
         }
     }
 
