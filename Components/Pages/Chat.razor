@@ -499,38 +499,31 @@
     {
         if (firstRender)
         {
-            // Initialize timezone service
             await TimezoneService.InitializeAsync();
-            
-            // Try restore chat history from protected storage
-            try
+            await TryRestoreChatAsync();
+        }
+
+        // Safety net: In rare reconnect/rehydration cases firstRender path may be skipped
+        // If there are still no messages, try restoring again when JSInterop is ready
+        if (!firstRender && messages.Count == 0)
+        {
+            await TryRestoreChatAsync();
+        }
+    }
+
+    private async Task TryRestoreChatAsync()
+    {
+        // Try restore chat history from protected storage
+        try
+        {
+            var stored = await ProtectedSessionStorage.GetAsync<List<ChatMessage>>(ChatStorageKey);
+            if (stored.Success && stored.Value != null && stored.Value.Count > 1)
             {
-                var stored = await ProtectedSessionStorage.GetAsync<List<ChatMessage>>(ChatStorageKey);
-                if (stored.Success && stored.Value != null && stored.Value.Count > 1)
-                {
-                    // Restore only if there is more than the welcome message
-                    messages = stored.Value;
-                }
-                else
-                {
-                    // Always create a fresh welcome message if there is nothing else
-                    messages.Add(new ChatMessage
-                    {
-                        Type = "assistant",
-                        Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-                        Timestamp = DateTime.Now
-                    });
-                    // Do not persist welcome-only state
-                    if (stored.Success && stored.Value != null && stored.Value.Count <= 1)
-                    {
-                        // Clean up potential stale storage with only welcome
-                        await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
-                    }
-                }
+                messages = stored.Value;
             }
-            catch
+            else
             {
-                // Fallback: ensure at least welcome message exists
+                // Ensure welcome message exists if there is nothing else
                 if (messages.Count == 0)
                 {
                     messages.Add(new ChatMessage
@@ -540,12 +533,31 @@
                         Timestamp = DateTime.Now
                     });
                 }
+
+                // Do not persist welcome-only state; clean up stale storage
+                if (stored.Success && stored.Value != null && stored.Value.Count <= 1)
+                {
+                    await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                }
             }
-            
-            lastMessageCount = messages.Count;
-            StateHasChanged(); // Update UI
-            await ScrollToBottom(); // After load/restore scroll to bottom
         }
+        catch
+        {
+            // Fallback: ensure at least welcome message exists
+            if (messages.Count == 0)
+            {
+                messages.Add(new ChatMessage
+                {
+                    Type = "assistant",
+                    Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
+                    Timestamp = DateTime.Now
+                });
+            }
+        }
+
+        lastMessageCount = messages.Count;
+        StateHasChanged();
+        await ScrollToBottom();
     }
 
     private void ToggleUpload()
