@@ -432,6 +432,7 @@
     // Text upload limits (pure Blazor-native)
     private const int MAX_TEXT_LENGTH = 15000;     // 15KB hard limit for circuit stability
     private const int WARNING_TEXT_LENGTH = 10000; // 10KB warning
+    private const string WelcomeMessage = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?";
     
     // Helper properties for text upload
     private Timer? debounceTimer;
@@ -511,48 +512,54 @@
         }
     }
 
+    private ChatMessage CreateAssistantMessage(string content)
+    {
+        return new ChatMessage
+        {
+            Type = "assistant",
+            Content = content,
+            Timestamp = DateTime.Now
+        };
+    }
+
+    private void EnsureWelcomeMessage()
+    {
+        if (messages.Count == 0)
+        {
+            messages.Add(CreateAssistantMessage(WelcomeMessage));
+        }
+    }
+
     private async Task TryRestoreChatAsync()
     {
         // Try restore chat history from protected storage
         try
         {
             var stored = await ProtectedSessionStorage.GetAsync<List<ChatMessage>>(ChatStorageKey);
-            if (stored.Success && stored.Value != null && stored.Value.Count > 1)
+            if (stored.Success && stored.Value != null)
             {
-                messages = stored.Value;
+                if (stored.Value.Count > 1)
+                {
+                    messages = stored.Value;
+                }
+                else
+                {
+                    // Only welcome or empty stored state -> ensure fresh welcome and clear persisted key
+                    EnsureWelcomeMessage();
+                    await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                }
             }
             else
             {
-                // Ensure welcome message exists if there is nothing else
-                if (messages.Count == 0)
-                {
-                    messages.Add(new ChatMessage
-                    {
-                        Type = "assistant",
-                        Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-                        Timestamp = DateTime.Now
-                    });
-                }
-
-                // Do not persist welcome-only state; clean up stale storage
-                if (stored.Success && stored.Value != null && stored.Value.Count <= 1)
-                {
-                    await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
-                }
+                // Unreadable/invalid payload (e.g., session key changed) -> clear blocked key and show welcome
+                await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                EnsureWelcomeMessage();
             }
         }
         catch
         {
             // Fallback: ensure at least welcome message exists
-            if (messages.Count == 0)
-            {
-                messages.Add(new ChatMessage
-                {
-                    Type = "assistant",
-                    Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-                    Timestamp = DateTime.Now
-                });
-            }
+            EnsureWelcomeMessage();
         }
 
         lastMessageCount = messages.Count;
@@ -972,12 +979,7 @@
     {
         // Always create a fresh welcome message (new timestamp)
         messages.Clear();
-        messages.Add(new ChatMessage
-        {
-            Type = "assistant",
-            Content = "Hallo! Ich bin Ihr DriftMind AI Assistant. Sie können Dokumente hochladen (.txt, .md, .pdf, .docx) oder Text direkt eingeben und dann Fragen dazu stellen. Wie kann ich Ihnen helfen?",
-            Timestamp = DateTime.Now
-        });
+        EnsureWelcomeMessage();
 
         // Clear persisted history so only-welcome is not saved
         await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
