@@ -335,6 +335,14 @@
                 }
             </div>
         }
+        @if (ChatHistoryEnabled && isChatHistoryTooLarge)
+        {
+            <div class="alert alert-warning mt-2">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong>Hinweis:</strong> Der Chat-Verlauf ist groß (@FormatFileSize(chatHistorySizeBytes)).
+                Er überschreitet @FormatFileSize(ChatHistoryMaxBytes) und wird daher nicht persistent gespeichert.
+            </div>
+        }
         <div class="input-group">
             <input @bind="currentMessage" @bind:event="oninput" @onkeydown="HandleKeyDown" type="text" class="form-control" 
                    placeholder="Stellen Sie eine Frage zu Ihren Dokumenten..." disabled="@isSearching">
@@ -810,7 +818,7 @@
                 messages.Add(chatMessage);
                 await PersistChatAsync();
                 
-                // Filenamen werden direkt aus OriginalFileName der Results angezeigt; kein Nachladen nötig
+                // Filenames are taken directly from OriginalFileName in the results; no additional fetch needed
             }
             else
             {
@@ -939,7 +947,7 @@
             return "";
 
         var totalMessages = GetUserMessagesCount();
-        var contextMessages = Math.Min(totalMessages, MaxChatHistoryMessages * 2); // User+Assistant Paare
+        var contextMessages = Math.Min(totalMessages, MaxChatHistoryMessages * 2); // User+Assistant pairs
 
         if (totalMessages <= MaxChatHistoryMessages * 2)
         {
@@ -983,6 +991,10 @@
 
         // Clear persisted history so only-welcome is not saved
         await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+
+    // Reset UI warning state
+        isChatHistoryTooLarge = false;
+        chatHistorySizeBytes = 0;
 
         StateHasChanged();
         await ScrollToNewMessage();
@@ -1141,11 +1153,11 @@
 
     private Task HandleDownloadSuccess(string? fileName)
     {
-        // Optional: Show success message
+    // Optional: Show success message
         // messages.Add(new ChatMessage
         // {
         //     Type = "system",
-        //     Content = $"Download von '{fileName ?? "Dokument"}' gestartet.",
+    //     Content = $"Download of '{fileName ?? "document"}' started.",
         //     Timestamp = DateTime.Now
         // });
         // StateHasChanged();
@@ -1185,6 +1197,9 @@
 
     // Persistence helpers
     private const string ChatStorageKey = "dmw.chat.messages.v1";
+    private const int ChatHistoryMaxBytes = 700 * 1024; // 700KB limit for session storage
+    private bool isChatHistoryTooLarge = false;
+    private long chatHistorySizeBytes = 0;
     private async Task PersistChatAsync()
     {
         try
@@ -1193,9 +1208,27 @@
             if (messages == null || messages.Count <= 1)
             {
                 await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                isChatHistoryTooLarge = false;
+                chatHistorySizeBytes = 0;
                 return;
             }
 
+            // Estimate size of JSON payload to persist (UTF-8 bytes)
+            var json = System.Text.Json.JsonSerializer.Serialize(messages);
+            var sizeBytes = System.Text.Encoding.UTF8.GetByteCount(json);
+
+            if (sizeBytes > ChatHistoryMaxBytes)
+            {
+                // Do not persist; remove key as a safety measure
+                await ProtectedSessionStorage.DeleteAsync(ChatStorageKey);
+                isChatHistoryTooLarge = true;
+                chatHistorySizeBytes = sizeBytes;
+                return;
+            }
+
+            // Below limit: persist as usual and reset warning state
+            isChatHistoryTooLarge = false;
+            chatHistorySizeBytes = sizeBytes;
             await ProtectedSessionStorage.SetAsync(ChatStorageKey, messages);
         }
         catch
