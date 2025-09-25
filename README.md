@@ -2,6 +2,8 @@
 
 A modern Blazor Server application for interacting with the DriftMind API - an intelligent document processing and search system powered by Azure OpenAI and Azure AI Search.
 
+[![Backend — DriftMind](https://img.shields.io/badge/Backend-DriftMind-informational?style=flat-square&logo=github&logoColor=white)](https://github.com/JustDanMan/DriftMind)
+
 ![Screenshots](./docs/screenshots/driftmindweb_home.png)
 
 ## ✨ Key Features
