@@ -42,7 +42,7 @@ SOFTWARE.
 
 ---
 
-### Azure.Storage.Blobs (12.25.0)
+### Azure.Storage.Blobs (12.26.0)
 License: MIT
 
 Copyright © Microsoft Corporation
