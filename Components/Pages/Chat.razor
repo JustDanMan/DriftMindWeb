@@ -790,7 +790,7 @@
                 MaxResults = MaxSourcesForAnswer,
                 UseSemanticSearch = true,
                 IncludeAnswer = true,
-                ChatHistory = ChatHistoryEnabled ? BuildChatHistory() : null
+                ChatHistory = ChatHistoryEnabled ? BuildChatHistory(includePendingUserMessage: false) : null
             };
             
             var response = await ApiService.SearchAsync(searchRequest);
@@ -886,7 +886,7 @@
         lastMessageCount = messages.Count;
     }
 
-    private List<DriftMindWeb.Services.ChatMessage>? BuildChatHistory()
+    private List<DriftMindWeb.Services.ChatMessage>? BuildChatHistory(bool includePendingUserMessage = true)
     {
         if (!ChatHistoryEnabled || messages.Count <= 1) // Don't include first welcome message
             return null;
@@ -898,6 +898,12 @@
             .OrderBy(m => m.Timestamp)
             .TakeLast(MaxChatHistoryMessages * 2) // User + Assistant pairs
             .ToList();
+
+        if (!includePendingUserMessage && relevantMessages.Any() && relevantMessages.Last().Type == "user")
+        {
+            // Skip the still-unsent user prompt so only completed exchanges form the history context
+            relevantMessages.RemoveAt(relevantMessages.Count - 1);
+        }
 
         if (!relevantMessages.Any())
             return null;
