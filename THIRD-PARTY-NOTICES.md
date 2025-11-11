@@ -96,7 +96,7 @@ SOFTWARE.
 
 ---
 
-### Markdig (0.42.0)
+### Markdig (0.43.0)
 License: BSD 2-Clause "Simplified" License
 
 Copyright © Alexandre Mutel
