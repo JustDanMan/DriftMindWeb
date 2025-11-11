@@ -18,7 +18,7 @@ A modern Blazor Server application for interacting with the DriftMind API - an i
 ## 🚀 Quick Start
 
 ### Prerequisites
-- .NET 8.0 SDK
+- .NET 10.0 SDK
 - Running DriftMind API instance
 
 ### Installation
@@ -111,7 +111,7 @@ For load-balanced deployments:
 ## 🛠️ Technical Overview
 
 ### Architecture
-- **Frontend**: Blazor Server (.NET 8.0) with Interactive Server Rendering
+- **Frontend**: Blazor Server (.NET 10.0) with Interactive Server Rendering
 - **Real-time**: SignalR (local or Azure SignalR Service)
 - **UI**: Bootstrap 5 with custom dark theme
 - **Security**: Token-based secure downloads with HMAC-SHA256

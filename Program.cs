@@ -121,7 +121,7 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(optio
 // Add HttpClient for API calls
 builder.Services.AddHttpClient();
 
-// Protected Browser Storage is available via package; no explicit registration needed in .NET 8 Razor Components
+// Protected Browser Storage is available via package; no explicit registration needed in .NET 10 Razor Components
 
 // Add DriftMind API Service
 builder.Services.AddScoped<IDriftMindApiService, DriftMindApiService>();
