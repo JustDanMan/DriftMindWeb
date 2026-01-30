@@ -7,7 +7,7 @@ This file lists third-party packages included in DriftMindWeb and provides the c
 | Package | Version | License | Copyright |
 |---------|---------|---------|-----------|
 | Azure.Extensions.AspNetCore.DataProtection.Blobs | 1.5.1 | MIT | © Microsoft Corporation |
-| Azure.Storage.Blobs | 12.26.0 | MIT | © Microsoft Corporation |
+| Azure.Storage.Blobs | 12.27.0 | MIT | © Microsoft Corporation |
 | Microsoft.Azure.SignalR | 1.32.0 | MIT | © Microsoft Corporation |
 | Markdig | 0.44.0 | BSD-2-Clause | © Alexandre Mutel |
 
@@ -42,7 +42,7 @@ SOFTWARE.
 
 ---
 
-### Azure.Storage.Blobs (12.26.0)
+### Azure.Storage.Blobs (12.27.0)
 License: MIT
 
 Copyright © Microsoft Corporation
